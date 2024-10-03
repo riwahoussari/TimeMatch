@@ -1,0 +1,164 @@
+{% extends "layout.html" %}
+
+{% block title %}All Events{% endblock %}
+{% block navlink1 %}active{% endblock %}
+
+{% block main %}
+
+    <ul class="nav nav-underline py-5 gx-5">
+        <li class="nav-item mx-3">
+            <a class="nav-link active" href="#invitations">Invitations</a>
+        </li>
+        <li class="nav-item mx-3">
+            <a class="nav-link" href="#my-events">My Events</a>
+        </li>
+        <li class="nav-item mx-3">
+            <a class="nav-link" href="#past-events">Past Event</a>
+        </li>
+    </ul>
+
+    
+    <div class="d-flex flex-wrap gap-4 align-items-start" id="cards-container"></div>
+
+{% endblock %}
+
+
+{% block script %}
+<script>
+    const cardsContainer = document.getElementById("cards-container")
+    const tabs = document.querySelectorAll(".nav .nav-link")
+
+    window.addEventListener('hashchange', () => {
+        handleChange(window.location.hash.split('#')[1])
+    })
+
+    tabs.forEach(tab => {
+        tab.addEventListener('click', (e) => {
+            e.preventDefault()
+            handleChange(tab.getAttribute('href').split('#')[1])
+        })
+    })
+
+    function handleChange(page) {
+        
+        // handle if someone tries to change the href of the tabs or enters a wrong hash
+        let pages = ['invitations', 'my-events', 'past-events']
+        page = !pages.includes(page) ? 'invitations' : page
+        window.location.hash = page
+        
+        // UI - change active tab
+        tabs.forEach(t => t.classList.remove('active'))
+        tabs[pages.indexOf(page)].classList.add('active')
+        
+        // fetch and display cards
+        fetch(`/api/${page}`)
+        .then(res => {
+            if (!res.ok) {throw new Error("Network response was not ok.")}
+            return res.json()
+        })
+        .then(data => { renderCards(data, page) })
+        .catch(err => console.log(err))
+    }
+
+    function renderCards(data, page) {
+        cardsContainer.querySelectorAll('.card').forEach(card => card.remove())
+
+        data.forEach(card => {
+            let c = createCard(card, page)
+            cardsContainer.appendChild(c)
+        })
+    }
+
+    function createCard(data, page){
+        let {name, creator, deadline, privacy} = data
+
+        // Card
+        let card = document.createElement('div')
+        card.classList = ['card card-index bg-secondary border-primary text-light']
+
+        // Card Header
+        let header = document.createElement('div')
+        header.classList = ['card-header d-flex justify-content-between align-items-center pt-3']
+        
+        let img = document.createElement('img')
+        img.setAttribute('src', privacy == 'private' ? './static/assets/lock.svg' : './static/assets/unlocked.png')
+        
+        let date = document.createElement('p')
+        date.textContent = deadline
+        
+        if (page == 'my-events'){
+
+            let wrapper = document.createElement('div')
+            wrapper.classList = ['d-flex align-items-end gap-2']
+            wrapper.appendChild(img)
+            wrapper.appendChild(date)
+            header.append(wrapper)
+
+            let link = document.createElement('a')
+            link.setAttribute('href', '#')
+            let gear = document.createElement('img')
+            gear.setAttribute('src', './static/assets/gear.svg')
+            link.appendChild(gear)
+            header.appendChild(link)
+
+        }else{
+
+            header.appendChild(img)
+            header.appendChild(date)
+
+        }
+        // Card Body
+        let cBody = document.createElement('div')
+        cBody.classList = ['card-body text-light py-2']
+        
+        let title = document.createElement('h4')
+        title.classList.add('card-title')
+        title.textContent = name
+        cBody.appendChild(title)
+        
+        let text = document.createElement('p')
+        text.classList.add('card-text')
+        text.textContent = `Created by: ${creator}`
+        cBody.appendChild(text)
+        
+        //Card Footer
+        let footer = document.createElement('div')
+        footer.classList = ['card-footer d-flex justify-content-between text-dark pb-3']
+        
+        if (page == 'invitations' && data.invitation_status == 'pending'){
+            
+            let accept = document.createElement('a')
+            accept.classList = ['btn btn-success btn-sm']
+            accept.textContent = 'Accept'
+            footer.appendChild(accept)
+            
+            let decline = document.createElement('a')
+            decline.classList = ['btn btn-danger btn-sm']
+            decline.textContent = 'Decline'
+            footer.appendChild(decline)
+
+        }
+        else if ((page == 'invitations' && data.invitation_status == 'accepted') || page == 'my-events') {
+            let edit = document.createElement('a')
+            edit.classList = ['btn btn-light btn-sm']
+            edit.textContent = 'Change Availability'
+            footer.appendChild(edit)
+        }
+        
+        let details = document.createElement('a')
+        details.classList = ['btn btn-secondary btn-sm']
+        details.textContent = 'View Details'
+        footer.appendChild(details)
+
+
+        card.appendChild(header)
+        card.appendChild(cBody)
+        card.appendChild(footer)
+
+        return card
+    }
+
+    
+    handleChange(window.location.hash.split('#')[1])
+</script>
+{% endblock %}

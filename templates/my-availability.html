@@ -1,0 +1,502 @@
+{% extends "layout.html" %}
+
+{% block title %}My Availability{% endblock %}
+{% block navlink2 %}active{% endblock %}
+
+{% block main %}
+
+<div class="mx-auto d-flex flex-column align-items-center py-5 opacity-50">
+    <p class="fs-2 pb-1 border-bottom-primary" >Default Availability</p>
+    <p class="mt-2 text-center">Note: you can overwrite this availability for each specific event.</p>
+</div>
+
+<div class="mx-auto d-flex flex-column align-items-center gap-4" id="general-availability" style="width: fit-content;">      
+</div>
+
+{% endblock %}
+
+{% block script %}
+<script>
+
+    //fetch('/api/general-availability')
+    //.then(res => {
+    //    if (!res.ok) throw new Error("Network response was not ok")
+    //    return json(res)
+    //})
+    //.then(data => renderPage(data))
+    //.catch(err => console.log(err))
+
+    
+    const availability = {
+        "mon" : [['5:00','7:00'],['9:00', '13:00'], ['14:00', '15:00']],
+        "tue" : [['5:00','7:00']],
+        "wed" : [],
+        "thu" : [['5:00','7:00'],['9:00', '13:00']],
+        "fri" : [['5:00','7:00']],
+        "sat" : [['5:00','7:00']],
+        "sun" : [['5:00','7:00']]
+    }
+    let newAvailability = availability;
+
+
+
+    /////////////// Initial Rendering
+    const rowsContainer = document.getElementById('general-availability')
+    renderPage(availability)
+
+
+
+    /////////////// Checkbox functionality
+    function handleCheckboxClick(checkbox) {
+        let day = checkbox.getAttribute('id')
+        let rightPart = checkbox.parentElement.parentElement.querySelector('.right-part')
+        let dayIntervals = newAvailability[day]
+
+        if (checkbox.checked) {
+            // if the user previously unchecked the box
+            if (dayIntervals[dayIntervals.length - 1] == 'unavailable') {
+                
+                dayIntervals.pop()
+                rightPart.innerHTML = ''
+                
+                // render the intervals before 'unavailble'
+                for (let i = 0; i < dayIntervals.length ; i++) {
+                    createRightPart(rightPart, dayIntervals[i], i)
+                }
+            }
+            // if the box is originally unchecked (unavailable for the day)
+            else {
+                // render default time picker 9:00am to 5:00 pm
+                rightPart.innerHTML = ''
+                dayIntervals.push(['9:00', '17:00'])
+                createRightPart(rightPart, ['9:00', '17:00'], 0)
+            }
+        }
+        else {
+            rightPart.querySelectorAll('select').forEach(select => select.removeEventListener('change', handleSelectChange))
+            rightPart.querySelectorAll('.close-icon').forEach(icon => icon.removeEventListener('click', handleCloseIconClick))
+            rightPart.querySelectorAll('.plus-icon').forEach(icon => icon.removeEventListener('click', handlePlusIconClick))
+            rightPart.innerHTML = ''
+            let p = document.createElement('p')
+            p.classList = ['opacity-50']
+            p.textContent = 'Unavailable'
+            rightPart.appendChild(p)
+
+            
+            newAvailability[day].push('unavailable')
+        }
+    }
+
+
+
+    /////////////// Select Functionality
+
+    function handleSelectChange(e) {
+        select = e.target
+        let targetSubRow = select.parentElement.parentElement.parentElement
+        let subRowNum = targetSubRow.getAttribute('id').split('-')[1]
+        let rightPart = targetSubRow.parentElement
+        let subRows = rightPart.querySelectorAll(':scope > div')
+        let day = rightPart.parentElement.querySelector('input[type="checkbox"]').getAttribute('id')
+
+
+        // Create time intervals for the day based on <select> elements' values & detect invalid intervals 
+        let intervals = []
+        subRows.forEach((row, i) => {
+            let startHour = row.querySelector('select[name="start-hour"]').value
+            let startMin = row.querySelector('select[name="start-min"]').value
+            let endHour = row.querySelector('select[name="end-hour"]').value
+            let endMin = row.querySelector('select[name="end-min"]').value
+
+            let interval = [i, `${startHour}:${startMin}`, `${endHour}:${endMin}`]
+            if (!isValidInterval([interval[1], interval[2]])) {
+                interval.push(0)
+            }
+            intervals.push(interval)
+        })
+        
+
+        // Check if the targeted interval is valid
+        let isValid = intervals[subRowNum].length == 4 ? false : true
+        let errorp = rightPart.querySelector(`#errp-inv-${subRowNum}`)
+        if (isValid && errorp) {
+            errorp.remove()
+            targetSubRow.querySelectorAll('select').forEach(select => select.classList.remove('error'))
+        } 
+        else if (!isValid && !errorp) {
+            errorp = document.createElement('p')
+            errorp.classList = ['text-danger fw-light errp errp-inv']
+            errorp.setAttribute('id', `errp-inv-${subRowNum}`)
+            errorp.textContent = "Choose an end time later than the start time."
+            targetSubRow.insertAdjacentElement('afterend', errorp)
+            targetSubRow.querySelectorAll('select').forEach(select => select.classList.add('error')) 
+
+            let ovrErr = rightPart.querySelector(`#errp-ovr-${subRowNum}`)
+            ovrErr?.remove()
+        }
+
+
+        // Detect overlapping intervals (only check valid intervals) 
+        let validIntervals = intervals.filter(interval => interval.length == 3)
+        validIntervals = detectOverlappingIntervals(validIntervals)
+
+        validIntervals.forEach(interval => {
+            let subRowNum = interval[0]
+            let errorp = rightPart.querySelector(`#errp-ovr-${subRowNum}`)
+
+            // if found error
+            if (interval.length == 4 && !errorp) {
+                errorp = document.createElement('p')
+                errorp.classList = ['text-danger fw-light errp errp-ovr']
+                errorp.setAttribute('id', `errp-ovr-${subRowNum}`)
+                errorp.textContent = "Times overlap with another set of times."
+                subRows[subRowNum].insertAdjacentElement('afterend', errorp)
+                subRows[subRowNum].querySelectorAll('select').forEach(select => select.classList.add('error')) 
+            } 
+            else if (interval.length == 3 && errorp){
+                errorp.remove()
+                subRows[subRowNum].querySelectorAll('select').forEach(select => select.classList.remove('error')) 
+            }
+
+        })
+
+
+        // sort intervals only if all of them are valid
+        validIntervals = validIntervals.filter(interval => interval.length == 3)
+        validIntervals = sortIntervals(validIntervals)
+
+        if (intervals.length == validIntervals.length) {
+            for (let i = validIntervals.length - 1; i >= 0; i--){
+                let index = validIntervals[i][0]
+                let subRow = subRows[index]
+                rightPart.prepend(subRow)
+            }
+            intervals = sortIntervals(intervals)
+        }
+
+
+        // change newAvailability
+        newAvailability[day] = intervals.map(interval =>  [interval[1], interval[2]] )
+    }
+
+    // Helper function to convert time string (e.g., "05:30") to minutes for easy comparison
+    function timeToMinutes(time) {
+        const [hours, minutes] = time.split(':').map(Number);
+        return hours * 60 + minutes;
+    }
+    
+    // Sorts intervals by start time
+    function sortIntervals(intervals) {
+        intervals.sort((a, b) => timeToMinutes(a[1]) - timeToMinutes(b[1]));
+        return intervals
+    }
+
+    // Checks if interval start time is before end time
+    function isValidInterval([start, end]) {
+        start = timeToMinutes(start)
+        end = timeToMinutes(end)
+        return !(end <= start && start != 0 && end != 0)
+    }
+
+    // Checks for overlaping intervals (pushes a 0 to any overlapping interval)
+    function detectOverlappingIntervals(intervals) {
+        
+        // Function to check if two intervals overlap
+        function isOverlapping(startA, endA, startB, endB) {
+            return startA < endB && startB < endA;
+        }
+    
+        // Loop through each interval and compare it with every other interval and also check wether its a valid interval
+        for (let i = 0; i < intervals.length; i++) {
+            const [indexA, startA, endA] = intervals[i];
+            const startAMinutes = timeToMinutes(startA);
+            const endAMinutes = timeToMinutes(endA);
+    
+            for (let j = i + 1; j < intervals.length; j++) {
+                const [indexB, startB, endB] = intervals[j];
+                const startBMinutes = timeToMinutes(startB);
+                const endBMinutes = timeToMinutes(endB);
+    
+                // Check if interval A overlaps with interval B
+                if (isOverlapping(startAMinutes, endAMinutes, startBMinutes, endBMinutes)) {
+                    // Add a 0 to both intervals if they overlap
+                    if (intervals[i].length === 3) {
+                        intervals[i].push(0);
+                    }
+                    if (intervals[j].length === 3) {
+                        intervals[j].push(0);
+                    }
+                }
+            }
+
+        }
+    
+        return intervals;
+    }
+    
+
+
+    ////////////// Close Icon Functionality
+    function handleCloseIconClick(e) {
+        let icon = e.target
+        let targetRow = icon.parentElement.parentElement
+        let rightPart = targetRow.parentElement
+        let rowIndex = targetRow.getAttribute('id').split('-')[1]
+       
+        // remove event listeners
+        targetRow.querySelectorAll('select').forEach(select => select.removeEventListener('change', handleSelectChange))
+        e.target.removeEventListener('click', handleCloseIconClick)
+        targetRow.querySelector('.plus-icon')?.removeEventListener('click', handlePlusIconClick)
+
+        // shift the ids of the next rows
+        let subRows = rightPart.querySelectorAll(':scope > div')
+        for (let i = Number(rowIndex) + 1; i < subRows.length ; i++){
+            let oldId = subRows[i].getAttribute('id').split('-')[1]
+            let newId = Number(oldId) - 1
+            subRows[i].setAttribute('id', `i-${newId}`)
+
+            // add plus button if it got deleted
+            if (newId === 0) {
+                let iconsWrapper = subRows[i].querySelector('.icons-wrapper')
+                let plusIcon = document.createElement('img')
+                plusIcon.setAttribute('src', './static/assets/plus.svg')
+                plusIcon.addEventListener('click', handlePlusIconClick)
+                iconsWrapper.appendChild(plusIcon)
+            }
+        }
+
+        // update newAvailability
+        let checkbox = rightPart.parentElement.querySelector('input[type="checkbox"]')
+        let day = checkbox.getAttribute('id')
+        newAvailability[day].splice(rowIndex, 1)
+
+        // remove row
+        targetRow.remove()
+
+        // uncheck checkbox and add 'unavailable' text if it was the last row
+        if (subRows.length <= 1) {
+            checkbox.setAttribute('selected', false)
+            checkbox.checked = false
+
+            let container = document.createElement('div')
+            container.classList = ['d-flex gap-4 align-items-center']
+
+            let p = document.createElement('p')
+            p.classList = ['opacity-50']
+            p.textContent = 'Unavailable'
+            container.appendChild(p)
+
+            rightPart.appendChild(container)
+        }
+    }
+
+
+
+    ///////////// Plus Icon Functionality
+    function handlePlusIconClick(e) {
+        let icon = e.target
+        let targetRow = icon.parentElement.parentElement
+        let rightPart = targetRow.parentElement
+        let subRows = rightPart.querySelectorAll(':scope > div')
+        let day = rightPart.parentElement.querySelector('input[type="checkbox"]').getAttribute('id')
+        
+        // create new row
+        let i = subRows.length 
+        let lastInterval = newAvailability[day][i - 1]
+        let newStartHour = (Number(lastInterval[1].split(':')[0]) + 1) < 24 ? Number(lastInterval[1].split(':')[0]) + 1 : 0
+        let newStartMin = lastInterval[1].split(':')[1]
+        let newInterval = [
+            `${newStartHour}:${newStartMin}`,
+            `${newStartHour + 1}:${newStartMin}`
+        ]
+        createRightPart(rightPart, newInterval, i)
+
+        // update newAvailability
+        newAvailability[day].push(newInterval)
+    }
+
+
+
+    ////////////// Rendering Functions
+
+    function renderPage(availability) {
+        for (day in availability){
+            let row = createRow(day, availability[day])
+            rowsContainer.appendChild(row)
+            
+            if (day != 'sun') {
+                let spacer = document.createElement('div')
+                spacer.classList.add('spacer')
+                rowsContainer.appendChild(spacer)
+            }
+        }
+    }
+
+    function createRow(dayName, data) {
+        let row = document.createElement('div')
+        row.classList = ['a-row d-flex gap-4 align-items-start']
+
+        // LEFT PART
+        let leftPart = document.createElement('div')
+        leftPart.classList = ['d-flex gap-4 align-items-center']
+        
+        let duplicate = document.createElement('img')
+        duplicate.setAttribute('src', './static/assets/duplicate.svg')
+        leftPart.appendChild(duplicate)
+        
+        let checkbox = document.createElement('input')
+        checkbox.setAttribute('id', dayName)
+        checkbox.setAttribute('type', 'checkbox')
+        checkbox.classList = ['form-check-input m-0']
+        if (data.length > 0) checkbox.setAttribute('checked', true)
+        checkbox.addEventListener('click', () => handleCheckboxClick(checkbox))
+        leftPart.appendChild(checkbox)
+        
+        let dayText = document.createElement('p')
+        dayText.classList = ['fs-6 fw-semibold text-capitalize day-name']
+        dayText.textContent = `${dayName} :`
+        leftPart.appendChild(dayText)
+        
+        
+        // RIGHT PART
+        let rightPart = document.createElement('div')
+        rightPart.classList = ['d-flex flex-column gap-3 right-part']
+
+        if (data.length > 0) {
+            data.forEach((interval, i) => createRightPart(rightPart, interval, i))
+        }
+        else {
+            let container = document.createElement('div')
+            container.classList = ['d-flex gap-4 align-items-center']
+
+            let p = document.createElement('p')
+            p.classList = ['opacity-50']
+            p.textContent = 'Unavailable'
+            container.appendChild(p)
+
+            rightPart.appendChild(container)
+        }
+
+
+        row.appendChild(leftPart)
+        row.appendChild(rightPart)
+
+        return row
+    }
+
+    function createHoursSelect(name, hour) {
+        let select = document.createElement('select')
+        select.setAttribute('name', name)
+
+        for (let i = 0; i <= 23; i++){
+            let option = document.createElement('option')
+            option.setAttribute('value', i)
+            option.textContent = i < 10 ? `0${i}` : i
+            if (hour == i) option.setAttribute('selected', true)
+            select.appendChild(option)
+        }
+
+        select.addEventListener('change', handleSelectChange)
+
+        return select
+    }
+    function createMinsSelect(name, min) {
+        let select = document.createElement('select')
+        select.setAttribute('name', name)
+        let options = ['00', '15', '30', '45']
+
+        for (o in options){
+            let option = document.createElement('option')
+            option.setAttribute('value', options[o])
+            option.textContent = options[o]
+            if (option[o] == min) option.setAttribute('selected', true)
+            select.appendChild(option)
+        }
+
+        select.addEventListener('change', handleSelectChange)
+
+        return select
+    }
+
+    function createRightPart(rightPart, interval, i) {
+        // create time picker
+        let container = document.createElement('div')
+        container.classList = ['d-flex gap-4 align-items-center']
+
+
+        // Time Pickers
+        let timePickersWrapper = document.createElement('div')
+        timePickersWrapper.classList = ['d-flex gap-3 align-items-center']
+
+        // start time
+        let startTimeWrapper = document.createElement('div')
+        startTimeWrapper.classList = ['d-flex gap-1']
+
+        let startHour = createHoursSelect('start-hour', interval[0].split(':')[0])
+        startTimeWrapper.appendChild(startHour)
+        
+        let colon = document.createElement('p')
+        colon.classList = ['fs-6 opacity-50']
+        colon.textContent = ':'
+        startTimeWrapper.appendChild(colon)
+
+        let startMin = createMinsSelect('start-min', interval[0].split(':')[1])
+        startTimeWrapper.appendChild(startMin)
+
+        timePickersWrapper.appendChild(startTimeWrapper)
+        
+        // arrow
+        let arrow = document.createElement('img')
+        arrow.setAttribute('src', './static/assets/arrow.svg')
+        arrow.classList = ['arrow opacity-50']
+        timePickersWrapper.appendChild(arrow)
+        
+        // end time
+        let endTimeWrapper = document.createElement('div')
+        endTimeWrapper.classList = ['d-flex gap-1']
+        
+        let endHour = createHoursSelect('end-hour', interval[1].split(':')[0])
+        endTimeWrapper.appendChild(endHour)
+        
+        let colon2 = document.createElement('p')
+        colon2.classList = ['fs-6 opacity-50']
+        colon2.textContent = ':'
+        endTimeWrapper.appendChild(colon2)
+        
+        let endMin = createMinsSelect('end-min', interval[1].split(':')[1])
+        endTimeWrapper.appendChild(endMin)
+        
+
+        timePickersWrapper.appendChild(endTimeWrapper)
+
+        container.appendChild(timePickersWrapper)
+
+
+
+        // Icons
+        let iconsWrapper = document.createElement('div')
+        iconsWrapper.classList = ['d-flex gap-3 align-items-center icons-wrapper']
+
+        let closeIcon = document.createElement('img')
+        closeIcon.setAttribute('src', './static/assets/close.svg')
+        closeIcon.classList = ['close-icon']
+        closeIcon.addEventListener('click', handleCloseIconClick)
+        iconsWrapper.appendChild(closeIcon)
+        
+        if (i == 0) {
+            let plusIcon = document.createElement('img')
+            plusIcon.setAttribute('src', './static/assets/plus.svg')
+            plusIcon.classList.add('plus-icon')
+            plusIcon.addEventListener('click', handlePlusIconClick)
+            iconsWrapper.appendChild(plusIcon)
+        }
+
+        container.appendChild(iconsWrapper)
+        container.setAttribute('id', `i-${i}`)
+
+        rightPart.appendChild(container)
+    }
+
+</script>
+{% endblock %}
+

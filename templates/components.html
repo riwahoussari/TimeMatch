@@ -1,0 +1,128 @@
+<!-- AVAILABILITY PAGE - ROW COMPONENT -->
+<div class="a-row d-flex gap-4 align-items-start">
+    <div class="d-flex gap-4 align-items-center">
+        <!-- duplicate -->
+        <img src="./static/assets/duplicate.svg" alt="">
+        <!-- checkbox -->
+        <input class="form-check-input m-0" type="checkbox" id="mon">
+        <!-- day name -->
+        <p class="fs-5 fw-semibold">Mon :</p>
+    </div>
+
+    <div class="d-flex flex-column gap-3">
+        <!-- time picker and icons -->
+        <div class="d-flex gap-4 align-items-center">
+            <!-- time pickers -->
+            <div class="d-flex gap-3 align-items-center">
+                <!-- Start time -->
+                <div class="d-flex gap-1">
+                    <select name="start-hour">
+                        <option value="">01</option>
+                        <option value="">02</option>
+                        <option value="">03</option>
+                        <option value="">04</option>
+                        <option value="">05</option>
+                        <option value="">06</option>
+                        <option value="">07</option>
+                        <option value="">08</option>
+                        <option value="">09</option>
+                        <option value="">10</option>
+                        <option value="">11</option>
+                        <option value="">12</option>
+                    </select>
+                    <p class="fs-5 opacity-50">:</p>
+                    <select name="start-min">
+                        <option value="">00</option>
+                        <option value="">15</option>
+                        <option value="">30</option>
+                        <option value="">45</option>
+                    </select>
+                    <select name="start-am-pm">
+                        <option value="">AM</option>
+                        <option value="">PM</option>
+                    </select>
+                </div>
+                <img class="opacity-50" src="./static/assets/arrow.svg" alt="">
+                <!-- End time -->
+                <div class="d-flex gap-1">
+                    <select name="end-hour" >
+                        <option value="">01</option>
+                        <option value="">02</option>
+                        <option value="">03</option>
+                        <option value="">04</option>
+                        <option value="">05</option>
+                        <option value="">06</option>
+                        <option value="">07</option>
+                        <option value="">08</option>
+                        <option value="">09</option>
+                        <option value="">10</option>
+                        <option value="">11</option>
+                        <option value="">12</option>
+                    </select>
+                    <p class="fs-5 opacity-50">:</p>
+                    <select name="end-min">
+                        <option value="">00</option>
+                        <option value="">15</option>
+                        <option value="">30</option>
+                        <option value="">45</option>
+                    </select>
+                    <select name="end-am-pm">
+                        <option value="">AM</option>
+                        <option value="">PM</option>
+                    </select>
+                </div>
+            </div>
+            <!-- X + icons -->
+            <div class="d-flex gap-3 align-items-center">
+                <img class="close-icon"  src="./static/assets/close.svg" alt="">
+                <img src="./static/assets/plus.svg" alt="">
+            </div>
+        </div>
+        
+    </div>
+</div>
+
+
+<!-- INDEX PAGE - CARD COMPONENT -->
+<div class="card card-index bg-secondary border-primary text-light">
+    <div class="card-header d-flex justify-content-between align-items-center pt-3">
+        <img src="./static/assets/lock.svg" alt="image for a lock">
+        <p>21/11/2024</p>
+    </div>
+
+    <div class="card-body text-light py-2">
+        <h4 class="card-title">The Very Long And Important Event Title</h4>
+        <p class="card-text">Created by: Alexander The Great</p>
+    </div>
+
+    <div class="card-footer d-flex justify-content-between text-dark pb-3">
+        <a href="#" class="btn btn-success btn-sm">Accept</a>
+        <a href="#" class="btn btn-danger btn-sm">Decline</a>
+        <a href="#" class="btn btn-secondary btn-sm">View Details</a>
+    </div>
+</div>
+
+
+<!-- BROADCAST LISTS PAGE - CARD COMPONENT -->
+<div class="card card-lists bg-secondary border-primary text-light"> 
+    
+    <div class="card-body text-light pb-3 pt-3">
+        <h4 class="card-title m-0">Marketing Team At Work</h4>
+    </div>
+
+    <div class="card-footer d-flex justify-content-between text-dark pt-0 pb-3">
+        <a href="#" class="btn btn-light btn-sm">Edit</a>
+        <a href="#" class="btn btn-secondary btn-sm">Delete</a>
+    </div>
+</div>
+
+
+<!-- BROADCAST LIST MODAL - USER ROW COMPONENT -->
+<div class="usr-row d-flex justify-content-between align-items-center">
+    <div class="row-content">
+        <p class="name">Alexandre The Great</p>
+        <p class="email">alexthegreat@gmail.com</p>
+    </div>
+    <img src="./static/assets/close.svg" alt="">
+</div>
+
