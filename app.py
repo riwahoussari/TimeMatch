@@ -28,8 +28,8 @@ app.config["SESSION_FILE_DIR"] = os.path.join(app.instance_path, 'flask_session'
 app.config["SESSION_PERMANENT"] = True
 app.config["SESSION_USE_SIGNER"] = True  # Sign the session ID
 app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=30)
-app.config['HOST'] = '0.0.0.0'
-app.config['PORT'] = '8000'
+app.config['HOST'] = os.getenv('HOST')
+app.config['PORT'] = os.getenv('PORT')
 app.config['DEBUG'] = True
 
 Session(app)
