@@ -1203,6 +1203,7 @@ def myAvailability():
 
         # validate availability
         availability = request.get_json()
+        print(availability)
         for day in availability:
             if 'unavailable' in availability[day]:
                 availability[day] = []
