@@ -236,8 +236,12 @@
         // submit form
         const eventHash = window.location.href.split('/').pop();
         fetch(`/event/${eventHash}`, {
-            method: 'patch',
-            headers: {"Content-Type": "application/json"},
+            //method: 'patch',
+            method: 'post',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-HTTP-Method-Override': 'PATCH',
+            },
             body: JSON.stringify({
                 title: titleInput.value,
                 description: descriptionInput.value,

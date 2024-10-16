@@ -302,14 +302,18 @@ def pastEvents():
 ################## EVENTS
 ################## EVENT INFO
 # get single event info - update event info - delete event
-@app.route('/event/<string:req_id>', methods = ['GET', 'PATCH', 'DELETE'])
+@app.route('/event/<string:req_id>', methods = ['GET', 'PATCH', 'DELETE', 'POST'])
 def event(req_id):
+    if request.method == 'POST' and request.headers.get('X-HTTP-Method-Override') == 'PATCH':
+        request_method = 'PATCH'
+    else:
+        request_method = request.method
 
     user_id = session.get("user_id")
     if user_id is None:
         return jsonify({"success": False, "message": "User unauthorized", "status": 401})
     
-    if request.method == 'GET':
+    if request_method == 'GET':
         event_id = req_id
         if not event_id:
             return jsonify({'success': False, "message": "No event id provided.", "status": 400})
@@ -336,7 +340,7 @@ def event(req_id):
         return jsonify({"success": True, "details": event_details})
 
 
-    elif request.method == 'PATCH':
+    elif request_method == 'PATCH':
         req = request.get_json()
 
         event_hash = req_id
@@ -465,7 +469,7 @@ def event(req_id):
 
         return {"success": True}
         
-    elif request.method == 'DELETE':
+    elif request_method == 'DELETE':
         event_id = req_id
         
         # make sure the event exists and user owns this event
@@ -609,27 +613,39 @@ def editSetting(event_hash):
 
 ################# EVENTS AND USER INTERACTIONS/SUBMISSIONS
 ## Decline Invitation
-@app.route('/decline-invitation/<string:event_id>', methods = ['PATCH'])
+@app.route('/decline-invitation/<string:event_id>', methods = ['PATCH', 'POST'])
 def declineInvitation(event_id):
-    if not event_id:
-        return jsonify({"success": False, "message": "Event id not provided", "status": 400})
-    
-    user_id = session.get("user_id")
-    if user_id is None:
-        return jsonify({"success": False, "message": "User unauthorized.", "status": 401})
+    if request.method == 'POST' and request.headers.get('X-HTTP-Method-Override') == 'PATCH':
+        request_method = 'PATCH'
+    else:
+        request_method = request.method
 
-    changedRows = db.execute("UPDATE event_users SET invitation_status = 'declined' WHERE event_id = ? AND user_id = ?", event_id, user_id)
+    if request_method == 'PATCH':
+        if not event_id:
+            return jsonify({"success": False, "message": "Event id not provided", "status": 400})
+        
+        user_id = session.get("user_id")
+        if user_id is None:
+            return jsonify({"success": False, "message": "User unauthorized.", "status": 401})
 
-    if changedRows <= 0:
-        return jsonify({"success": False, "message": "Update unsuccessfull.", "status": 404})
+        changedRows = db.execute("UPDATE event_users SET invitation_status = 'declined' WHERE event_id = ? AND user_id = ?", event_id, user_id)
 
-    return jsonify({"success": True})
+        if changedRows <= 0:
+            return jsonify({"success": False, "message": "Update unsuccessfull.", "status": 404})
+
+        return jsonify({"success": True})
     
 
 ## Accept invitation / submit availability
 @app.route('/events/<string:event_hash>', methods = ['GET', 'PATCH', 'POST'])
 def events(event_hash): 
-    if request.method == 'GET':
+    if request.method == 'POST' and request.headers.get('X-HTTP-Method-Override') == 'PATCH':
+        request_method = 'PATCH'
+    else:
+        request_method = request.method
+
+
+    if request_method == 'GET':
         # check if user is logged in    
         user_id = session.get('user_id')
         if user_id is None: loggedin = False
@@ -772,7 +788,7 @@ def events(event_hash):
 
         return render_template('submit-availability.html', availability=[user_availability], event=event)
 
-    elif request.method == 'PATCH':
+    elif request_method == 'PATCH':
         # check if user is logged in
         user_id = session.get('user_id')
         if user_id is None: loggedin = False
@@ -889,7 +905,7 @@ def events(event_hash):
 
         return jsonify({"success": True})
 
-    elif request.method == 'POST':
+    elif request_method == 'POST':
         req = request.get_json()
         # check if event hash is valid
         if not event_hash:
@@ -957,10 +973,14 @@ def events(event_hash):
                 
 
 ## Change Availabiilty
-@app.route('/change-availability/<string:event_hash>', methods = ['GET', 'PATCH'])
+@app.route('/change-availability/<string:event_hash>', methods = ['GET', 'PATCH', 'POST'])
 def changeAvailability(event_hash):
+    if request.method == 'POST' and request.headers.get('X-HTTP-Method-Override') == 'PATCH':
+        request_method = 'PATCH'
+    else:
+        request_method = request.method
 
-    if request.method == 'GET':
+    if request_method == 'GET':
         # check if user is logged in    
         user_id = session.get('user_id')
         if user_id is None: loggedin = False
@@ -1048,7 +1068,7 @@ def changeAvailability(event_hash):
         # render page
         return render_template('change-availability.html', availability=user_availability, event=event)
 
-    if request.method == 'PATCH':
+    elif request_method == 'PATCH':
         # check if user is logged in    
         user_id = session.get('user_id')
         if user_id is None: loggedin = False
@@ -1172,11 +1192,16 @@ def submissions(event_hash):
 
 ################################################
 ################## MY DEFAULT AVAILABILITY
-@app.route('/my-availability', methods = ['GET', "PATCH"])
+@app.route('/my-availability', methods = ['GET', "PATCH", 'POST'])
 def myAvailability(): 
+    if request.method == 'POST' and request.headers.get('X-HTTP-Method-Override') == 'PATCH':
+        request_method = 'PATCH'
+    else:
+        request_method = request.method
+
     user_id = session.get('user_id')
 
-    if request.method == 'GET':
+    if request_method == 'GET':
         if user_id is None:
             return redirect('/login')
         
@@ -1197,7 +1222,7 @@ def myAvailability():
 
         return render_template('my-availability.html', availability=availability)
 
-    elif request.method == 'PATCH':
+    elif request_method == 'PATCH':
         if user_id is None:
             return jsonify({"success": False, "message": "User unauthorized.", "status": 401})
 
@@ -1240,11 +1265,17 @@ def broadcastLists():
 
 @app.route('/broadcast-list', methods=['GET', 'POST', 'PATCH', 'DELETE'])
 def broadcastList():
+    if request.method == 'POST' and request.headers.get('X-HTTP-Method-Override') == 'PATCH':
+        request_method = 'PATCH'
+    else:
+        request_method = request.method
+
+
     user_id = session.get('user_id')
     if user_id is None:
         return jsonify({"success": False, "message": "User unauthorized", "status": 401})
 
-    if request.method == "POST":
+    if request_method == "POST":
         req = request.get_json()
 
         # check if a list name is provided
@@ -1284,7 +1315,7 @@ def broadcastList():
         user_broadcast_lists = db.execute("SELECT id, broadcast_list_name FROM broadcast_lists WHERE creator_id = ?", user_id)
         return jsonify({"success": True, 'lists': user_broadcast_lists})
 
-    elif request.method == 'PATCH':
+    elif request_method == 'PATCH':
         req = request.get_json()
 
         list_id = req["listId"]
@@ -1338,7 +1369,7 @@ def broadcastList():
 
         return jsonify({"success": True})
     
-    elif request.method == "GET":
+    elif request_method == "GET":
         list_id = request.args.get('listId')
         if not list_id:
             return jsonify({"success": False, "message": "List id is missing from the request.", "status": 400})
@@ -1357,7 +1388,7 @@ def broadcastList():
             "contacts": contacts
         }})
     
-    elif request.method == 'DELETE':
+    elif request_method == 'DELETE':
         req = request.get_json()
 
         # get list id

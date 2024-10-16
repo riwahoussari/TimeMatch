@@ -1275,8 +1275,12 @@
         if (!errorsFound) {
             const eventHash = window.location.href.split('/').pop();
             fetch(`/change-availability/${eventHash}`, {
-                method: 'patch',
-                headers: {'Content-Type': "application/json"},
+                //method: 'patch',
+                method: 'post',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-HTTP-Method-Override': 'PATCH',
+                },
                 body: JSON.stringify(newAvailability)
             })
             .then(res => {

@@ -605,8 +605,12 @@
         if (!errorsFound) {
             console.log(JSON.stringify(newAvailability))
             fetch('/my-availability', {
-                method: 'patch',
-                headers: {'Content-Type': "application/json"},
+                //method: 'patch',
+                method: 'post',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-HTTP-Method-Override': 'PATCH',
+                },
                 body: JSON.stringify(newAvailability)
             })
             .then(res => {

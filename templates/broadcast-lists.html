@@ -345,8 +345,12 @@
         }
 
         fetch('/broadcast-list', {
-            method: 'patch',
-            headers: {"Content-Type": "application/json"},
+            //method: 'patch',
+            method: 'post',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-HTTP-Method-Override': 'PATCH',
+            },
             body: JSON.stringify({
                 listId: listsModal._element.id,
                 listName: listNameInpt.value,

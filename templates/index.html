@@ -251,7 +251,13 @@
             declineInvitationConfirmBtn.classList.remove('disabled')
                
             let event_id = e.currentTarget.parentElement.parentElement.parentElement.parentElement.getAttribute('eventId')
-            fetch(`/decline-invitation/${event_id}`, {method: "patch"})
+            fetch(`/decline-invitation/${event_id}`, {
+                //method: 'patch',
+                method: 'post',
+                headers: {
+                    'X-HTTP-Method-Override': 'PATCH',
+                },
+            })
             .then(res => {
                 if (!res.ok) {
                     appendAlert('Network response error. Try again later', 'warning')
