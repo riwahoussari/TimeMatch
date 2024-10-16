@@ -363,7 +363,7 @@
         let eventTitle = btn.parentElement.parentElement.parentElement.parentElement.parentElement.querySelector(".card-title").textContent
         
         settingsLink.setAttribute('href', `/settings/${eventhash}`)
-        eventLinkPlaceholder.textContent = `http://127.0.0.1:8000/events/${eventhash}`
+        eventLinkPlaceholder.textContent = `https://timematch.onrender.com/events/${eventhash}`
         eventTitlePlaceholder.textContent = eventTitle
         shareEventModal.show()
     }
@@ -376,11 +376,13 @@
             return window.navigator.clipboard.writeText(text)
                 .then(() => {
                     appendAlert('Link copied to clipboard!', 'success');
+                    shareEventModal.hide()
                 })
                 .catch(err => {
                     appendAlert('Could not copy link :(', 'danger');
+                    shareEventModal.hide()
                 });
-
+                
         } else {
             // Fallback for older browsers
             const textArea = document.createElement('textarea');
@@ -398,13 +400,16 @@
                 const successful = document.execCommand('copy'); // Copy the text
                 if (successful) {
                     appendAlert('Link copied to clipboard!', 'success');
+                    shareEventModal.hide()
                 } else {
                     appendAlert('Could not copy link :(', 'danger');
+                    shareEventModal.hide()
                 }
             } catch (err) {
                 appendAlert('Could not copy link :(', 'danger');
+                shareEventModal.hide()
             }
-    
+
             // Cleanup: Remove the temporary textarea
             document.body.removeChild(textArea);
         }
