@@ -1,0 +1,1307 @@
+{% extends "layout-2.html" %}
+
+{% block title %}Change Availability{% endblock %}
+{% block title2 %}Change Availability{% endblock %}
+
+{% block main %}
+    <!-- Event Info -->
+    <div class="d-flex flex-column align-items-center">
+        <div class="d-flex flex-column gap-2" style="max-width: 35rem;">
+            <div>
+                <h1 class="fs-4 fw-semibold" id="event-title"></h1>
+                <p class="opacity-70 fw-light pb-4" id="event-description" style="line-height: 1.3;"></p>
+            </div>
+            <div class="d-flex" >
+                <span class="opacity-50 fw-light" style="width: 7rem;" style="width: 7rem;">Created by: </span>
+                <span class="opacity-70 fw-medium" id="event-creator"></span>
+            </div>
+            <div class="d-flex" >
+                <span class="opacity-50 fw-light" style="width: 7rem;">Location: </span>
+                <span class="opacity-70 fw-medium" id="event-location"></span>
+            </div>
+            <div class="d-flex" >
+                <span class="opacity-50 fw-light" style="width: 7rem;">Duration: </span>
+                <span class="opacity-70 fw-medium" id="event-duration"></span>
+            </div>
+            <div class="d-flex" >
+                <span class="opacity-50 fw-light" style="width: 7rem;">Date Range: </span>
+                <span class="opacity-70 fw-medium" id="event-date-range"></span>
+            </div>
+            <div class="d-flex" >
+                <span class="opacity-50 fw-light" style="width: 7rem;">Privacy: </span>
+                <span class="opacity-70 fw-medium" id="event-privacy"></span>
+            </div>
+            <div class="d-flex" >
+                <span class="opacity-50 fw-light" style="width: 7rem;">Deadline: </span>
+                <span class="opacity-70 fw-medium" id="event-deadline"></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- General Availability -->
+    <div class="d-flex flex-column align-items-center">
+        <div class="mx-auto d-flex flex-column align-items-center py-5 text-secondary">
+            <p class="fs-3 pb-1 border-bottom-primary text-primary">Your General Availability For This Event</p>
+        </div>
+
+        <div class="mx-auto d-flex flex-column align-items-center gap-2" id="general-availability" style="width: fit-content;"></div>
+    </div>
+
+    <!-- Calendar -->
+    <div class="d-flex flex-column align-items-center">
+        <div class="mx-auto d-flex flex-column align-items-center py-5 text-secondary">
+            <p class="fs-3 pb-1 border-bottom-primary text-primary">Overwrite Specific Days</p>
+        </div>
+
+        <!-- Calendar -->
+        <div class="d-flex gap-5 flex-wrap" >
+            <div class="calendar big-calendar">
+                <div class="calendar-wrapper">
+                    <div class="header">
+                        <p class="current-date">September 2024</p>
+                        <div class="icons">
+                            <span class="arrow arrow-left">
+                                <svg width="1.5rem" height="1.5rem" style="rotate:-90deg" viewBox="4 4 16 16" xmlns="http://www.w3.org/2000/svg" class="w-7 h-7 pointer-events-none rotate-90"><path d="M12.56 7.23l6.752 6.604c.254.254.253.694-.018.965a.695.695 0 01-.983 0L12 8.68l-6.29 6.098c-.294.293-.734.294-1.005.022a.695.695 0 010-.983l6.716-6.568a.8.8 0 011.14-.018z" fill="currentcolor" fill-rule="evenodd"></path></svg>
+                            </span>
+                            <span class="arrow arrow-right">
+                                <svg width="1.5rem" height="1.5rem" style="rotate:90deg" viewBox="4 4 16 16" xmlns="http://www.w3.org/2000/svg" class="w-7 h-7 pointer-events-none rotate-90"><path d="M12.56 7.23l6.752 6.604c.254.254.253.694-.018.965a.695.695 0 01-.983 0L12 8.68l-6.29 6.098c-.294.293-.734.294-1.005.022a.695.695 0 010-.983l6.716-6.568a.8.8 0 011.14-.018z" fill="currentcolor" fill-rule="evenodd"></path></svg>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="calendar">
+                        <ul class="weeks">
+                            <li>Sun</li>
+                            <li>Mon</li>
+                            <li>Tue</li>
+                            <li>Wed</li>
+                            <li>Thu</li>
+                            <li>Fri</li>
+                            <li>Sat</li>
+                        </ul>
+                        <ul class="days">
+            
+                        </ul>
+                    </div>
+                </div>
+                <div class="legend-wrapper">
+                    <div class="d-flex gap-2">
+                        <img src="../static/assets/todaymark.svg" alt="">
+                        <p class="fw-light">Today</p>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <div class="circle gray"></div>
+                        <p class="fw-light">Availibility is overwritten</p>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <div class="circle blue"></div>
+                        <p class="fw-light">Selected day</p>
+                    </div>
+                </div>
+            </div>
+            <div class="day-availability">
+                <p>
+                    <span id="availability-for" class="text-secondary fw-light">Select A Day</span>
+                    <span id="selected-day" class="fw-medium ps-2 text-capitalize" style="word-spacing: 0.1rem;"></span>
+                </p>
+
+                <div id="day-intervals-wrapper" class="d-flex align-items-start justify-content-between gap-4 mt-4">
+                    <div id="day-intervals-rows" class="d-flex flex-column gap-2"></div>
+                    <img id="plus-icon" src="../static/assets/plus.svg" class="hidden">
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+    
+    <button class="btn btn-primary" id="submit-btn" >Update Availability</button>
+
+    <!-- modal -->
+    <div class="modal fade" id="duplicate-modal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+    
+          <div class="modal-content bg-primary">
+    
+            <div class="modal-header">
+              <h1 class="modal-title fs-5" id="exampleModalLabel">Duplicate <span></span> Availability</h1>
+              <button type="button" class="btn-close" style="filter: invert(1);" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+    
+            <div class="modal-body d-flex flex-column gap-2">
+              <div class="d-flex gap-2 align-items-center">
+                  <input class="form-check-input m-0" type="checkbox" value="mon" id="dup-check-mon"><label for="dup-check-mon">Mon</label>
+              </div>
+              <div class="d-flex gap-2 align-items-center">
+                  <input class="form-check-input m-0" type="checkbox" value="tue" id="dup-check-tue"><label for="dup-check-tue">Tue</label>
+              </div>
+              <div class="d-flex gap-2 align-items-center">
+                  <input class="form-check-input m-0" type="checkbox" value="wed" id="dup-check-wed"><label for="dup-check-wed">Wed</label>
+              </div>
+              <div class="d-flex gap-2 align-items-center">
+                  <input class="form-check-input m-0" type="checkbox" value="thu" id="dup-check-thu"><label for="dup-check-thu">Thu</label>
+              </div>
+              <div class="d-flex gap-2 align-items-center">
+                  <input class="form-check-input m-0" type="checkbox" value="fri" id="dup-check-fri"><label for="dup-check-fri">Fri</label>
+              </div>
+              <div class="d-flex gap-2 align-items-center">
+                  <input class="form-check-input m-0" type="checkbox" value="sat" id="dup-check-sat"><label for="dup-check-sat">Sat</label>
+              </div>
+              <div class="d-flex gap-2 align-items-center">
+                  <input class="form-check-input m-0" type="checkbox" value="sun" id="dup-check-sun"><label for="dup-check-sun">Sun</label>
+              </div>
+            </div>
+    
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+              <button type="button" class="btn btn-primary" id="duplicate-confirm">Duplicate</button>
+            </div>
+          </div>
+    
+        </div>
+    </div>
+
+{% endblock %}
+
+
+{% block script %} 
+
+<!-- availability script -->
+<script>
+    const submitBtb = document.getElementById('submit-btn')
+    const errorMessages = ['Time overlaps with another set of times', 'Choose an end time later than the start time']
+    let daysNames = {mon: 'Monday', tue: 'Tuesday', wed: 'Wednesday', thu: 'Thursday', fri: 'Friday', sat: 'Saturday', sun: 'Sunday'}
+    const duplicateModal = new bootstrap.Modal('#duplicate-modal', {
+        keyboard: true,
+        focus: true,
+        backdrop: false
+    })
+    const duplicateConfirmBtn = duplicateModal._element.querySelector('#duplicate-confirm')
+    duplicateConfirmBtn.addEventListener('click', handleDuplicateConfirmBtnClick)
+
+    let availability = []
+    let newAvailability = []
+
+
+
+    /////////////// Initial Rendering
+    const rowsContainer = document.getElementById('general-availability')
+    
+
+    /////////////// Checkbox functionality
+    function handleCheckboxClick(checkbox) {
+        let day = checkbox.getAttribute('id')
+        let dayIntervals = newAvailability[0][day]
+
+        // if the user is unchecking the box - maintain his intervals in case he rechecks the box - and just add "unavailable" at the end of the array
+        if (!checkbox.checked){
+            newAvailability[0][day].push('unavailable')
+        }
+
+        // if the user rechecks the box - remove 'unavailable' from the end of the array (his previous intervals are maintained)
+        else if (checkbox.checked && dayIntervals[dayIntervals.length - 1] == 'unavailable') {
+            newAvailability[0][day].pop()
+        }
+
+        // if the user is checking the box for the first time meaning he doesn't have any preserved intervals to display - add a new default interval
+        else {
+            newAvailability[0][day].push([0, '9:00', '17:00'])
+        }
+
+        rerenderRightPart(day)
+    }
+
+
+    /////////////// Select Functionality
+    function handleSelectChange(e) {
+        let targetSubRow = e.target.parentElement.parentElement.parentElement
+        let rightPart = targetSubRow.parentElement
+        let subRows = rightPart.querySelectorAll(':scope > div')
+        let day = rightPart.parentElement.querySelector('input[type="checkbox"]').getAttribute('id')
+
+        let intervals = []
+        subRows.forEach((row, i) => {
+            let startHour = row.querySelector('select[name="start-hour"]').value
+            let startMin = row.querySelector('select[name="start-min"]').value
+            let endHour = row.querySelector('select[name="end-hour"]').value
+            let endMin = row.querySelector('select[name="end-min"]').value
+            let interval = [i, `${startHour}:${startMin}`, `${endHour}:${endMin}`]
+            intervals.push(interval)
+        })
+
+        newAvailability[0][day] = formatIntervals(intervals)
+        rerenderRightPart(day)
+       
+    }
+
+    
+    ////////////// Close Icon Functionality
+    function handleCloseIconClick(e) {
+        let targetSubRow = e.target.parentElement.parentElement
+        let rowId = targetSubRow.getAttribute('id').split('-')[1]
+        let day = targetSubRow.parentElement.parentElement.querySelector('input[type="checkbox"]').getAttribute('id')
+       
+
+        // update newAvailability
+        let newIntervals = [...newAvailability[0][day]]
+        newIntervals.splice(rowId, 1)
+        newAvailability[0][day] = formatIntervals(newIntervals)
+
+
+        rerenderRightPart(day)
+    }
+
+
+    ///////////// Plus Icon Functionality
+    function handlePlusIconClick(e) {
+        let rightPart = e.target.parentElement.querySelector('.right-part')
+        let checkbox = rightPart.parentElement.querySelector('input[type="checkbox"]')
+        let day = checkbox.getAttribute('id')
+        let intervals = newAvailability[0][day]
+        let newInterval = []
+
+        // create new interval
+        if (intervals.length == 0 || intervals.includes('unavailable')) {
+            newInterval = ['9:00', '17:00']            
+        }
+        else {
+            let lastInterval = intervals[intervals.length - 1]
+            let [hour, min] = lastInterval[2].split(':')
+            hour = Number(hour) == 23 ? -1 : Number(hour)
+            newInterval = [ `${hour + 1}:${min}` , `${hour + 2}:${min}`]
+        }
+        
+        // if the intervals for this day are preserved reset the array to empty 
+        // since we won't rerender the preserved intervals rather we'll display a new default interval
+        if (intervals.includes('unavailable')) newAvailability[0][day] = []
+        
+        // update newAvailability
+        newAvailability[0][day].push([intervals.length, ...newInterval])
+        newAvailability[0][day] = formatIntervals(newAvailability[0][day])
+
+        rerenderRightPart(day)
+
+    }
+
+
+    ////////////// Duplicate Icon Functionality
+    function handleDuplicateIconClick(e) {
+        let day = e.target.parentElement.querySelector('input[type="checkbox"]').getAttribute('id')
+        let rightPart = e.target.parentElement.parentElement.querySelector('.right-part')
+
+        // check if intervals are valid for the day else show an error and don't continue
+        let srcIntervals = newAvailability[0][day]
+        for (let i = 0; i < srcIntervals.length; i++){
+            if (srcIntervals[i].length != 3) {
+                appendAlert(`Fix ${daysNames[day]} timing errors before copying the timing to other days.`, 'danger')
+                return
+            }
+        }
+
+        // open modal
+        duplicateModal._element.querySelector('.modal-header span').textContent = daysNames[day]
+        duplicateModal._element.querySelectorAll(`input[type="checkbox"]`).forEach(box => {box.checked = false; box.disabled = false})
+        duplicateModal._element.querySelectorAll(`.modal-body label`).forEach(label => label.classList.remove('opacity-50'))
+        duplicateModal._element.querySelector(`input[id="dup-check-${day}"]`).disabled = true
+        duplicateModal._element.querySelector(`label[for="dup-check-${day}"]`).classList.add('opacity-50')
+        
+        duplicateModal.show()
+    }
+    
+
+    ///////////// Duplicate Confirm Functionality
+    function handleDuplicateConfirmBtnClick() {
+        let checkboxes = duplicateModal._element.querySelectorAll('input[type="checkbox"]')
+        let sourceDay = ''
+        let destinationDays = []
+        checkboxes.forEach(box => {
+            if (box.checked) {
+                destinationDays.push(box.getAttribute('id').split('-')[2])
+            }
+            if (box.disabled) {
+                sourceDay = box.getAttribute('id').split('-')[2]
+            }
+        })
+
+        // get the source interval
+        let srcIntervals = newAvailability[0][sourceDay]
+        if (srcIntervals.includes('unavailable')) srcIntervals = []
+
+        // if source intervals have error show error and don't continue
+        for (let i = 0; i < srcIntervals.length; i++){
+            if (srcIntervals[i].length != 3) {
+                appendAlert(`Fix ${daysNames[sourceDay]} timing errors before copying the timing to other days.`, 'danger')
+                return
+            }
+        }
+
+        
+        // update new availability for each destination day and rerender the right part for this day
+        destinationDays.forEach(day => {
+            srcIntervals = formatIntervals(srcIntervals)
+            newAvailability[0][day] = [...srcIntervals]
+            rerenderRightPart(day)
+        })
+
+        // Hide Modal
+        duplicateModal.hide()
+    }
+
+
+
+    ///////////////////////////////////////
+    ////////////// Rendering Functions
+
+    function renderPage(availability) {
+        for (day in daysNames){
+            let row = createRow(day, availability[0][day])
+            rowsContainer.appendChild(row)
+            
+            if (day != 'sun') {
+                let spacer = document.createElement('div')
+                spacer.classList.add('spacer')
+                rowsContainer.appendChild(spacer)
+            }
+        }
+    }
+
+    function createRow(dayName, data) {
+        let row = document.createElement('div')
+        row.classList = ['a-row d-flex gap-4 align-items-start']
+
+        // LEFT PART
+        let leftPart = document.createElement('div')
+        leftPart.classList = ['d-flex gap-4 align-items-center left-part']
+        
+        let duplicate = document.createElement('img')
+        duplicate.setAttribute('src', '../static/assets/duplicate-icon.svg')
+        duplicate.addEventListener('click', handleDuplicateIconClick)
+        leftPart.appendChild(duplicate)
+        
+        let checkbox = document.createElement('input')
+        checkbox.setAttribute('id', dayName)
+        checkbox.setAttribute('type', 'checkbox')
+        checkbox.classList = ['form-check-input m-0']
+        if (data.length > 0) checkbox.setAttribute('checked', true)
+        checkbox.addEventListener('click', () => handleCheckboxClick(checkbox))
+        leftPart.appendChild(checkbox)
+        
+        let dayText = document.createElement('p')
+        dayText.classList = ['fs-6 fw-semibold text-capitalize day-name']
+        dayText.textContent = `${dayName} :`
+        leftPart.appendChild(dayText)
+        
+        
+        // RIGHT PART
+        let rightPart = document.createElement('div')
+        rightPart.classList = ['d-flex flex-column gap-1 right-part']
+
+        if (data.length > 0) {
+            data.forEach((interval, i) => createRightPart(rightPart, [interval[1], interval[2]], i))
+        }
+        else {
+            let container = document.createElement('div')
+            container.classList = ['d-flex gap-4 align-items-center']
+
+            let p = document.createElement('p')
+            p.classList = ['opacity-50 unavailable']
+            p.textContent = 'Unavailable'
+            container.appendChild(p)
+
+            rightPart.appendChild(container)
+        }
+
+
+        // Plust Icon
+        let plusIcon = document.createElement('img')
+        plusIcon.setAttribute('src', '../static/assets/plus.svg')
+        plusIcon.classList.add('plus-icon')
+        plusIcon.addEventListener('click', handlePlusIconClick)
+        
+        
+        row.appendChild(leftPart)
+        row.appendChild(rightPart)
+        row.appendChild(plusIcon)
+
+        return row
+    }
+
+    function createHoursSelect(name, hour) {
+        let select = document.createElement('select')
+        select.setAttribute('name', name)
+
+        for (let i = 0; i <= 23; i++){
+            let option = document.createElement('option')
+            option.setAttribute('value', i)
+            option.textContent = i < 10 ? `0${i}` : i
+            if (hour == i) option.setAttribute('selected', true)
+            select.appendChild(option)
+        }
+
+        return select
+    }
+    function createMinsSelect(name, min) {
+        let select = document.createElement('select')
+        select.setAttribute('name', name)
+        let options = ['00', '15', '30', '45']
+
+        for (o in options){
+            let option = document.createElement('option')
+            option.setAttribute('value', options[o])
+            option.textContent = options[o]
+            if (options[o] == min) {
+                option.setAttribute('selected', true)
+            }
+            select.appendChild(option)
+        }
+
+        return select
+    }
+
+    function createRightPart(rightPart, interval, i) {
+        // create time picker
+        let container = document.createElement('div')
+        container.classList = ['d-flex gap-4 align-items-center mt-1']
+
+
+        // Time Pickers
+        let timePickersWrapper = document.createElement('div')
+        timePickersWrapper.classList = ['d-flex gap-3 align-items-center']
+
+        // start time
+        let startTimeWrapper = document.createElement('div')
+        startTimeWrapper.classList = ['d-flex gap-1']
+
+        let startHour = createHoursSelect('start-hour', interval[0].split(':')[0])
+        startHour.addEventListener('change', handleSelectChange)
+        startTimeWrapper.appendChild(startHour)
+        
+        let colon = document.createElement('p')
+        colon.classList = ['fs-6 opacity-70 d-flex align-items-center']
+        colon.textContent = ':'
+        startTimeWrapper.appendChild(colon)
+
+        let startMin = createMinsSelect('start-min', interval[0].split(':')[1])
+        startMin.addEventListener('change', handleSelectChange)
+        startTimeWrapper.appendChild(startMin)
+
+        timePickersWrapper.appendChild(startTimeWrapper)
+        
+        // arrow
+        let arrow = document.createElement('img')
+        arrow.setAttribute('src', '../static/assets/funky-arrow.svg')
+        arrow.style.rotate = '90deg'
+        arrow.classList = ['arrow opacity-50']
+        timePickersWrapper.appendChild(arrow)
+        
+        // end time
+        let endTimeWrapper = document.createElement('div')
+        endTimeWrapper.classList = ['d-flex gap-1']
+        
+        let endHour = createHoursSelect('end-hour', interval[1].split(':')[0])
+        endHour.addEventListener('change', handleSelectChange)
+        endTimeWrapper.appendChild(endHour)
+        
+        let colon2 = document.createElement('p')
+        colon2.classList = ['fs-6 opacity-70 d-flex align-items-center']
+        colon2.textContent = ':'
+        endTimeWrapper.appendChild(colon2)
+        
+        let endMin = createMinsSelect('end-min', interval[1].split(':')[1])
+        endMin.addEventListener('change', handleSelectChange)
+        endTimeWrapper.appendChild(endMin)
+        
+
+        timePickersWrapper.appendChild(endTimeWrapper)
+
+        container.appendChild(timePickersWrapper)
+
+
+
+        // Icons
+        let iconsWrapper = document.createElement('div')
+        iconsWrapper.classList = ['d-flex gap-3 align-items-center icons-wrapper']
+
+        let closeIcon = document.createElement('img')
+        closeIcon.setAttribute('src', '../static/assets/close.svg')
+        closeIcon.classList = ['close-icon']
+        closeIcon.addEventListener('click', handleCloseIconClick)
+        iconsWrapper.appendChild(closeIcon)
+
+        container.appendChild(iconsWrapper)
+        container.setAttribute('id', `i-${i}`)
+
+        rightPart.appendChild(container)
+    }
+
+    function rerenderRightPart(day) {
+        // remove everything in rightPart
+        let checkbox = document.getElementById(day)
+        let rightPart = checkbox.parentElement.parentElement.querySelector('.right-part')
+        rightPart.querySelectorAll('select').forEach(select => select?.removeEventListener('change', handleSelectChange))
+        rightPart.querySelectorAll('.close-icon').forEach(closeIcon => closeIcon?.removeEventListener('click', handleCloseIconClick))
+        rightPart.innerHTML = ''
+
+        // render "Unavailable"
+        if (newAvailability[0][day].includes('unavailable') || newAvailability[0][day].length == 0){
+            checkbox.checked = false
+            let p = document.createElement('p')
+            p.classList = ['opacity-50 unavailable']
+            p.textContent = "Unavailable"
+            rightPart.appendChild(p)
+        }
+        // render new rows
+        else {
+            checkbox.checked = true
+            newAvailability[0][day].forEach((interval, i) => {
+                createRightPart(rightPart, [interval[1], interval[2]], i)
+
+                
+                if (interval.length === 4) {
+                    // add error class to all <select> of that row
+                    rightPart.querySelectorAll(":scope > div:last-child select").forEach(select => select.classList.add('error'))
+
+                    // add error message
+                    let errorp = document.createElement('p')
+                    errorp.classList = ['text-danger fw-light']
+                    errorp.textContent = errorMessages[interval[3]]
+                    
+                    rightPart.appendChild(errorp)
+                    
+                }
+            })
+        }
+    }
+
+    //////////////////////////////////////
+    ///////// Helper Functions
+     // Helper function to convert time string (e.g., "05:30") to minutes for easy comparison
+    function timeToMinutes(time) {
+        const [hours, minutes] = time.split(':').map(Number);
+        return hours * 60 + minutes;
+    }
+    
+    // Sorts intervals by start time
+    function sortIntervals(intervals) {
+        intervals.sort((a, b) => timeToMinutes(a[1]) - timeToMinutes(b[1]));
+        return intervals
+    }
+
+    // Sorts intervals by id
+    function sortIntervalsById(intervals) {
+        return intervals.sort((a, b) => a[0] - b[0]);
+    }
+
+    // Checks if interval start time is before end time
+    function isValidInterval([start, end]) {
+        start = timeToMinutes(start)
+        end = timeToMinutes(end)
+        return !(end <= start && start != 0 && end != 0)
+    }
+
+    // Checks for overlaping intervals (pushes a 0 to any overlapping interval)
+    function detectOverlappingIntervals(intervals) {
+        
+        // Function to check if two intervals overlap
+        function isOverlapping(startA, endA, startB, endB) {
+            return startA < endB && startB < endA;
+        }
+    
+        // Loop through each interval and compare it with every other interval and also check wether its a valid interval
+        for (let i = 0; i < intervals.length; i++) {
+            const [indexA, startA, endA] = intervals[i];
+            const startAMinutes = timeToMinutes(startA);
+            const endAMinutes = timeToMinutes(endA);
+    
+            for (let j = i + 1; j < intervals.length; j++) {
+                const [indexB, startB, endB] = intervals[j];
+                const startBMinutes = timeToMinutes(startB);
+                const endBMinutes = timeToMinutes(endB);
+    
+                // Check if interval A overlaps with interval B
+                if (isOverlapping(startAMinutes, endAMinutes, startBMinutes, endBMinutes)) {
+                    // Add a 0 to both intervals if they overlap
+                    if (intervals[i].length === 3) {
+                        intervals[i].push(0);
+                    }
+                    if (intervals[j].length === 3) {
+                        intervals[j].push(0);
+                    }
+                }
+            }
+
+        }
+    
+        return intervals;
+    }
+
+    // removes any previous error codes
+    // pushes a 1 to invalid intervals
+    // pushes a 0 to overlapping intervals
+    // if any interval has an error it sorts the intervals by id
+    // if all intervals are error free it sorts the intervals by time
+    function formatIntervals(intervals) {
+        intervals = [...intervals]
+
+        // remove previous error codes
+        intervals.forEach(interval => {
+            if (interval.length == 4) interval.pop()
+        })
+
+        // check validity (error code 1)
+        intervals.forEach(interval => {
+            if (!isValidInterval([interval[1], interval[2]])) {
+                interval.push(1)
+            }
+        })
+
+
+        let invalidIntervals = intervals.filter(interval => interval.length == 4)
+        let validIntervals = intervals.filter(interval => interval.length == 3)
+
+
+        // check overlaps (error code 0)
+        validIntervals = detectOverlappingIntervals(validIntervals)
+
+
+        intervals = [...validIntervals, ...invalidIntervals]
+        invalidIntervals = intervals.filter(interval => interval.length == 4)
+
+
+        // if all correct sort by time
+        if (invalidIntervals.length == 0) {
+            intervals = sortIntervals(intervals)
+        }
+        // else sort by id
+        else {
+            intervals = sortIntervalsById(intervals)
+        }
+
+        return intervals
+    }
+
+</script>
+
+
+<!-- Calendar Script -->
+<script>
+    const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+    const currentDate = document.querySelector('.calendar-wrapper .current-date')
+    const daysUl = document.querySelector('.calendar-wrapper ul.days')
+    const prev = document.querySelector('.calendar-wrapper .arrow-left')
+    const next = document.querySelector('.calendar-wrapper .arrow-right')
+    
+    let date = new Date(), 
+    currYear = date.getFullYear(),
+    currMonth = date.getMonth(),
+    currDate = date.getDate(),
+    currDayName = '',
+    selectedDate = '';
+     
+    let startDate, startMonth, startYear, endDate, endMonth, endYear
+
+    const [todayDate, todayMonth, todayYear] = [currDate, currMonth, currYear]
+    ///////// Calendar Rendering
+    function renderCalendarInitial(event) {
+        startDate = Number(event.start_date.split('-')[2])
+        startMonth = Number(event.start_date.split('-')[1]) - 1
+        startYear = Number(event.start_date.split('-')[0])
+        endDate = Number(event.end_date.split('-')[2])
+        endMonth = Number(event.end_date.split('-')[1]) - 1
+        endYear = Number(event.end_date.split('-')[0])
+
+        currMonth = startMonth
+        currYear = startYear
+
+
+        // disable arrows
+        prev.classList.add('disabled')
+        if (startMonth == endMonth) {
+            next.classList.add('disabled')
+        }
+
+        renderCalendar()
+
+        // arrows functionality
+        prev.addEventListener('click', handlePrevArrowClick)
+        next.addEventListener('click', handleNextArrowClick)
+    }
+
+    function renderCalendar() {
+        let firstDayOfMonth = new Date(currYear, currMonth, 1).getDay()
+
+        let lastDateOfMonth = new Date(currYear, currMonth + 1, 0).getDate()
+        let lastDayOfMonth = new Date(currYear, currMonth, lastDateOfMonth).getDay()
+
+        let lastDateOfPrevMonth = new Date(currYear, currMonth, 0).getDate()
+        let liTags = ''
+
+        let changedDates =  getChangedDates()
+
+        // days of the previous month
+        for (let i = lastDateOfPrevMonth - firstDayOfMonth + 1; i <= lastDateOfPrevMonth; i++){
+            if (i == todayDate && currMonth - 1 == todayMonth && currYear == todayYear){
+                liTags += `<li class="today disabled">${id}</li>`
+            } else {
+                liTags += `<li class="disabled">${i}</li>`
+            }
+        }
+        // days of the current month
+        for (i = 1; i <= lastDateOfMonth; i++){
+            // check if this day's specific availability has already been changed
+            let changed = false
+            let error = false
+            changedDates.forEach(changedDate => {
+                if (changedDate[0] == i && changedDate[1] == currMonth + 1 && changedDate[2] == currYear){
+                    changed = true
+                }
+            })
+            
+            // check if this day is not in the event's date range
+            let disabled = false
+            if (i < startDate && currMonth == startMonth && currYear == startYear){
+                disabled = true
+            } 
+            else if (i > endDate && currMonth == endMonth && currYear == endYear) {
+                disabled = true
+            }
+
+            // check if this day is today
+            let today = false
+            if (i == todayDate && currMonth == todayMonth && currYear == todayYear) {
+                today = true
+            }
+
+            liTags += `<li class="${changed ? 'changed' : ''} ${disabled ? 'disabled' : ''} ${today ? 'today' : ''}">${i}</li>`
+        }
+        // day of the next month
+        for (i = 1; i <= 6 - lastDayOfMonth; i++){
+            if (i == todayDate && currMonth + 1 == todayMonth && currYear == todayYear) {
+                liTags += `<li class="today disabled">${i}</li>`
+            } else {
+                liTags += `<li class="disabled">${i}</li>`
+            }
+        }
+
+        currentDate.textContent = months[currMonth] + " " + currYear
+        daysUl.querySelectorAll('li').forEach(li => li.removeEventListener('click', handleLiClick))
+        daysUl.innerHTML = liTags
+        daysUl.querySelectorAll('li').forEach(li => {
+            if (!li.classList.contains('disabled')){
+                li.addEventListener('click', handleLiClick)
+            }
+        })
+    }
+
+    function handlePrevArrowClick() {
+        if (!(currMonth == startMonth && currYear == startYear)) {
+            currMonth--
+            currYear = currMonth < 0 ? currYear - 1 : currYear
+            currMonth = currMonth < 0 ? 11 : currMonth
+
+            // if its the minimun date in the range disable the button
+            if (currMonth == startMonth && currYear == startYear){
+                prev.classList.add('disabled')
+            }
+
+            next.classList.remove('disabled')
+            renderCalendar()
+
+            // remove everything in rowsContainer
+            dayIntervalsRows.querySelectorAll('select').forEach(select => select?.removeEventListener('change', handleSpecificSelectChange))       
+            dayIntervalsRows.querySelectorAll('.close-icon').forEach(icon => icon?.removeEventListener('click', handleSpecificCloseIconClick))  
+            dayIntervalsRows.innerHTML = ''
+            // hide plus button and give instructions
+            specificPlusIcon.classList.add('hidden')
+            availabilityFor.textContent = 'Select A Day'
+            selectedDay.textContent = ''
+        }
+    }
+
+    function handleNextArrowClick() {
+        if (!(currMonth == endMonth && currYear == endYear)){
+            currMonth++
+            currYear = currMonth > 11 ? currYear + 1 : currYear
+            currMonth = currMonth > 11 ? 0 : currMonth
+
+            // if its the maximum date in the range disable button
+            if (currMonth == endMonth && currYear == endYear){
+                next.classList.add('disabled')
+            }
+
+            prev.classList.remove('disabled')
+            renderCalendar()
+
+            // remove everything in rowsContainer
+            dayIntervalsRows.querySelectorAll('select').forEach(select => select?.removeEventListener('change', handleSpecificSelectChange))       
+            dayIntervalsRows.querySelectorAll('.close-icon').forEach(icon => icon?.removeEventListener('click', handleSpecificCloseIconClick))  
+            dayIntervalsRows.innerHTML = ''
+            // hide plus button and give instructions
+            specificPlusIcon.classList.add('hidden')
+            availabilityFor.textContent = 'Select A Day'
+            selectedDay.textContent = ''
+        }
+    }
+
+
+    ///// Helper function
+    function getChangedDates() {
+        let changedDates = [...newAvailability]
+        changedDates.splice(0,1)
+        changedDates = changedDates.map(obj => {
+            return obj.date.split('/').map(Number)
+        })
+        return changedDates
+    }
+
+</script>
+<script>
+   // Calendar Functionality
+   const selectedDay = document.getElementById('selected-day')
+   const dayIntervalsRows = document.getElementById('day-intervals-rows')
+   const specificPlusIcon = document.getElementById('plus-icon')
+   const availabilityFor = document.getElementById('availability-for')
+    
+    // Calendar day li Functionality
+    function handleLiClick(e) {
+        specificPlusIcon.classList.remove('hidden')
+        availabilityFor.textContent = "Availability for: "
+
+        daysUl.querySelectorAll('li').forEach(li => li.classList.remove('active'))
+        e.target.classList.add('active')
+ 
+        currDate = Number(e.target.textContent)
+        selectedDate = `${currDate}/${currMonth+1}/${currYear}`
+
+        let day = new Date(currYear, currMonth, currDate).getDay()
+        currDayName = ['sun', 'mon', 'tue', "wed", 'thu', 'fri', 'sat'][day]
+
+        let monthName = months[currMonth]
+        
+        selectedDay.textContent = `${currDayName} ${currDate} ${monthName} ${currYear}`
+        selectedDate = `${currDate}/${currMonth+1}/${currYear}`
+
+        rerenderSpecificDayRows()
+    }
+
+    // Select Functionality
+    function handleSpecificSelectChange(e) {
+        let subRows = dayIntervalsRows.querySelectorAll(':scope > div')
+        
+        let newIntervals = []
+        subRows.forEach((row, i) => {
+            let startHour = row.querySelector('select[name="start-hour"]').value
+            let startMin = row.querySelector('select[name="start-min"]').value
+            let endHour = row.querySelector('select[name="end-hour"]').value
+            let endMin = row.querySelector('select[name="end-min"]').value
+            let interval = [i, `${startHour}:${startMin}`, `${endHour}:${endMin}`]
+            newIntervals.push(interval)
+        })
+        newIntervals = formatIntervals(newIntervals)
+
+        // update newAvailability
+        let found = false
+        if (newAvailability.length > 1) {
+            for (let i = 1; i < newAvailability.length; i++){
+
+                if (newAvailability[i].date == selectedDate) {
+
+                    newAvailability[i].intervals = newIntervals
+                    found = true
+                }
+            }
+        }
+        if (newAvailability.length == 1 || !found) {
+            // overwrite it for the first time
+            newAvailability.push({date: selectedDate, intervals: newIntervals})
+
+            document.querySelector('li.active').classList.add('changed')
+        }
+        
+        rerenderSpecificDayRows()
+        
+    }
+
+    // Close Icon Functionality
+    function handleSpecificCloseIconClick(e){
+                
+        let rowId = e.target.parentElement.parentElement.id.split('-')[1]
+        
+
+
+        // update newAvailability
+        let found = false
+        if (newAvailability.length > 1) {
+            for (let i = 1; i < newAvailability.length; i++){
+
+                if (newAvailability[i].date == selectedDate) {
+
+                    newAvailability[i].intervals.splice(rowId, 1) 
+                    newAvailability[i].intervals = formatIntervals([...newAvailability[i].intervals])
+
+                    found = true
+                }
+            }
+        }
+        if (newAvailability.length == 1 || !found) {
+            // overwrite it for the first time
+            let generalIntervals = [...newAvailability[0][currDayName]]
+            generalIntervals.splice(rowId, 1)
+            generalIntervals = formatIntervals(generalIntervals)
+
+            newAvailability.push({date: selectedDate, intervals: generalIntervals})
+
+            document.querySelector('li.active').classList.add('changed')
+        }
+
+        rerenderSpecificDayRows()
+    }
+
+    // Plus Icon Functionality
+    specificPlusIcon.addEventListener('click', handleSpecificPlusIconClick)
+    function handleSpecificPlusIconClick(){
+        
+        function createNewInterval(intervals){
+            if (intervals.length == 0 || intervals.includes('unavailable')) {
+                intervals.splice(0, intervals.length)          
+                intervals.push([0, '9:00', '17:00'])        
+            }
+            else {
+                let lastInterval = intervals[intervals.length - 1]
+                let [hour, min] = lastInterval[2].split(':')
+                hour = Number(hour) == 23 ? -1 : Number(hour)
+                let newInterval = [ `${hour + 1}:${min}` , `${hour + 2}:${min}`]
+
+                intervals.push([intervals.length, ...newInterval])
+            }
+        }
+
+        let intervals = []
+        let found = false
+
+        if (newAvailability.length > 1) {
+            for (let i = 1; i < newAvailability.length; i++){
+
+                if (newAvailability[i].date == selectedDate) {
+                    intervals = [...newAvailability[i].intervals]
+                    found = true
+
+                    // create new interval 
+                    createNewInterval(intervals)
+
+                    newAvailability[i].intervals = formatIntervals(intervals)
+                }
+            }
+        }
+        if (newAvailability.length == 1 || !found) {
+            // overwrite it for the first time
+            intervals = [...newAvailability[0][currDayName]]
+            createNewInterval(intervals)
+            newAvailability.push({date: selectedDate, intervals: formatIntervals(intervals)})
+
+            document.querySelector('li.active').classList.add('changed')
+        }
+        
+        rerenderSpecificDayRows()
+
+
+    }
+
+
+    //////////// Rendering functions
+
+    // render specific day rows
+    function createSpecificDayRow(rowsContainer, interval, i) {
+        // create time picker
+        let container = document.createElement('div')
+        container.classList = ['d-flex gap-4 align-items-center mt-1']
+
+        // Time Pickers
+        let timePickersWrapper = document.createElement('div')
+        timePickersWrapper.classList = ['d-flex gap-3 align-items-center']
+
+        // start time
+        let startTimeWrapper = document.createElement('div')
+        startTimeWrapper.classList = ['d-flex gap-1']
+
+        let startHour = createHoursSelect('start-hour', interval[0].split(':')[0])
+        startHour.addEventListener('change', handleSpecificSelectChange)
+        startTimeWrapper.appendChild(startHour)
+        
+        let colon = document.createElement('p')
+        colon.classList = ['fs-6 opacity-50']
+        colon.textContent = ':'
+        startTimeWrapper.appendChild(colon)
+
+        let startMin = createMinsSelect('start-min', interval[0].split(':')[1])
+        startMin.addEventListener('change', handleSpecificSelectChange)
+        startTimeWrapper.appendChild(startMin)
+
+        timePickersWrapper.appendChild(startTimeWrapper)
+        
+        // arrow
+        let arrow = document.createElement('img')
+        arrow.setAttribute('src', '../static/assets/funky-arrow.svg')
+        arrow.style.rotate = '90deg'
+        arrow.classList = ['arrow opacity-50']
+        timePickersWrapper.appendChild(arrow)
+        
+        // end time
+        let endTimeWrapper = document.createElement('div')
+        endTimeWrapper.classList = ['d-flex gap-1']
+        
+        let endHour = createHoursSelect('end-hour', interval[1].split(':')[0])
+        endHour.addEventListener('change', handleSpecificSelectChange)
+        endTimeWrapper.appendChild(endHour)
+        
+        let colon2 = document.createElement('p')
+        colon2.classList = ['fs-6 opacity-50']
+        colon2.textContent = ':'
+        endTimeWrapper.appendChild(colon2)
+        
+        let endMin = createMinsSelect('end-min', interval[1].split(':')[1])
+        endMin.addEventListener('change', handleSpecificSelectChange)
+        endTimeWrapper.appendChild(endMin)
+        
+
+        timePickersWrapper.appendChild(endTimeWrapper)
+
+        container.appendChild(timePickersWrapper)
+
+
+
+        // Icons
+        let iconsWrapper = document.createElement('div')
+        iconsWrapper.classList = ['d-flex gap-3 align-items-center icons-wrapper']
+
+        let closeIcon = document.createElement('img')
+        closeIcon.setAttribute('src', '../static/assets/close.svg')
+        closeIcon.classList = ['close-icon']
+        closeIcon.addEventListener('click', handleSpecificCloseIconClick)
+        iconsWrapper.appendChild(closeIcon)
+
+        container.appendChild(iconsWrapper)
+        container.setAttribute('id', `i-${i}`)
+
+        rowsContainer.appendChild(container)
+    }
+
+    function rerenderSpecificDayRows() {
+        let intervals = []
+        let found = false
+        
+
+        // remove everything in rowsContainer
+        dayIntervalsRows.querySelectorAll('select').forEach(select => select?.removeEventListener('change', handleSpecificSelectChange))       
+        dayIntervalsRows.querySelectorAll('.close-icon').forEach(icon => icon?.removeEventListener('click', handleSpecificCloseIconClick))  
+        dayIntervalsRows.innerHTML = ''
+
+
+        // Get Interval
+        if (newAvailability.length > 1) {
+            for (let i = 1; i < newAvailability.length; i++){
+
+                if (newAvailability[i].date == selectedDate) {
+                    intervals = [...newAvailability[i].intervals]
+                    found = true
+                }
+            }
+        }
+        if (newAvailability.length == 1 || !found) {
+            intervals = [...newAvailability[0][currDayName]]
+            intervals.forEach(interval => {
+                if (interval.length == 4) {
+                    intervals = [[0, '9:00', '17:00']]
+                    return
+                }
+            })
+        }
+
+        // render "Unavailable"
+        if (intervals.includes('unavailable') || intervals.length == 0){
+            let p = document.createElement('p')
+            p.classList = ['opacity-50 unavailable']
+            p.textContent = "Unavailable"
+            dayIntervalsRows.appendChild(p)
+
+            document.querySelector('li.active').classList.remove('error')
+            document.querySelectorAll('li.disabled-tmp').forEach(li => {
+                li.classList.remove('disabled-tmp')
+                li.addEventListener('click', handleLiClick)
+            })
+            prev.addEventListener('click', handlePrevArrowClick)
+            next.addEventListener('click', handleNextArrowClick)
+            prev.classList.remove('disabled-tmp')
+            next.classList.remove('disabled-tmp')
+        }
+        // render new rows
+        else {
+            let errorFound = false
+            intervals.forEach((interval, i) => {
+                createSpecificDayRow(dayIntervalsRows, [interval[1], interval[2]], i)
+                
+                if (interval.length === 4) {
+                    // add error class to all <select> of that row
+                    dayIntervalsRows.querySelectorAll(":scope > div:last-child select").forEach(select => select.classList.add('error'))
+                    
+                    // add error message
+                    let errorp = document.createElement('p')
+                    errorp.classList = ['text-danger fw-light']
+                    errorp.textContent = errorMessages[interval[3]]
+
+                    // this handles error ui later
+                    errorFound = true
+                    
+                    dayIntervalsRows.appendChild(errorp)
+                    
+                }
+            })
+            // disable arrows and days li and turn active day to red
+            if (errorFound) {
+                document.querySelector('li.active').classList.add('error')
+                document.querySelectorAll('li').forEach(li => {
+                    if (!li.classList.contains('active')) {
+                        li.classList.add('disabled-tmp')
+                        li.removeEventListener('click', handleLiClick)
+                    }
+                })
+                prev.removeEventListener('click', handlePrevArrowClick)
+                next.removeEventListener('click', handleNextArrowClick)
+                prev.classList.add('disabled-tmp')
+                next.classList.add('disabled-tmp')
+            }
+            // reenable everything
+            else {
+                document.querySelector('li.active').classList.remove('error')
+                document.querySelectorAll('li.disabled-tmp').forEach(li => {
+                    li.classList.remove('disabled-tmp')
+                    li.addEventListener('click', handleLiClick)
+                })
+                prev.addEventListener('click', handlePrevArrowClick)
+                next.addEventListener('click', handleNextArrowClick)
+                prev.classList.remove('disabled-tmp')
+                next.classList.remove('disabled-tmp')
+            }
+
+        }
+    }
+
+</script>
+
+<!-- render event info -->
+<script>
+    function renderEventInfo(event) {
+        // format duration
+        let hours = event.duration.split(':')[0] + ' hrs '
+        let mins = event.duration.split(':')[1] + ' mins '
+
+        // format dates
+        let end_date = event.end_date.split('-')
+        end_date = [end_date[2], months[end_date[1] - 1], end_date[0]]
+        end_date[1] = end_date[1].split('').splice(0,3).join('')
+        end_date = end_date.join(' ')
+        
+        let start_date = event.start_date.split('-')
+        start_date = [start_date[2], months[start_date[1] - 1], start_date[0]]
+        start_date[1] = start_date[1].split('').splice(0,3).join('')
+        start_date = start_date.join(' ')
+
+        let deadline = event.deadline.split('-')
+        deadline = [deadline[2], months[deadline[1] - 1], deadline[0]]
+        deadline[1] = deadline[1].split('').splice(0,3).join('')
+        deadline = deadline.join(' ')
+
+        document.querySelector('#event-title').textContent = event.title
+        document.querySelector('#event-description').textContent = event.description
+        document.querySelector('#event-creator').textContent = event.fullname
+        document.querySelector('#event-location').textContent = event.location
+        document.querySelector('#event-duration').textContent = hours + mins
+        
+        document.querySelector('#event-date-range').textContent = `${start_date}  ->  ${end_date}`
+        document.querySelector('#event-privacy').textContent = event.privacy
+        document.querySelector('#event-deadline').textContent = deadline
+    }
+
+
+    availability = {{availability | tojson}}
+    newAvailability = availability
+    let event = {{event | tojson}}
+
+    renderEventInfo(event)
+    renderPage(newAvailability)
+    renderCalendarInitial(event)
+
+
+    submitBtb.addEventListener('click', () => {
+        let errorsFound = false
+        
+        // check general availability for errors
+        for (const day of Object.keys(daysNames)) {
+            if (errorsFound) break; // Break out of the outer loop if an error is found
+        
+            let dayIntervals = formatIntervals(newAvailability[0][day]);
+        
+            for (const interval of dayIntervals) {
+                if (interval.length === 4) {
+                    appendAlert(`Please fix all errors on ${daysNames[day]} before submitting.`, 'danger');
+                    errorsFound = true;
+                    break; // Break out of the inner loop if an error is found
+                }
+            }
+        }
+
+        // check specific day availability for errors
+        if (newAvailability.length > 0) {
+            for (let i = 1; i < newAvailability.length; i++) {
+
+                if (errorsFound) break;
+                
+                let dayIntervals = newAvailability[i].intervals
+
+                for (const interval of dayIntervals) {
+                    if (interval.length === 4) {
+                        
+                        appendAlert(`Please fix all errors on ${newAvailability[i].date} before submitting.`, 'danger');
+                        errorsFound = true;
+                        break; // Break out of the inner loop if an error is found
+                    }
+                }
+
+            }
+
+        }
+
+
+        if (!errorsFound) {
+            const eventHash = window.location.href.split('/').pop();
+            fetch(`/change-availability/${eventHash}`, {
+                method: 'patch',
+                headers: {'Content-Type': "application/json"},
+                body: JSON.stringify(newAvailability)
+            })
+            .then(res => {
+                if (!res.ok) {
+                    appendAlert("Couldn't connect to the server.", 'warning')
+                    throw new Error('Network response was not okay')
+                }
+                return res.json()
+            })
+            .then(data => {
+                if (data.success) {
+                    appendAlert('Availability Updated Successfully!', 'success')
+                }
+                else if (data.status && data.status == 401) {
+                    window.location.reload()
+                }
+                else {
+                    appendAlert(data.message, 'danger')
+                }
+            })
+            .catch(err => console.log(err))
+        }
+
+    })
+
+
+</script>
+{% endblock %}

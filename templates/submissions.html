@@ -1,0 +1,756 @@
+{% extends "layout-2.html" %}
+
+{% block title %}Submissions{% endblock %}
+{% block title2 %}Submissions{% endblock %}
+
+{% block main %}
+<div id="submissions-page">
+
+    <!-- CALENDAR SECTION -->
+    <div class="d-flex flex-column py-5 pb-4 text-secondary">
+        <p class="fs-3 pb-1 border-bottom-primary text-primary">Submissions</p>
+    </div>
+
+    <div class="calendar">
+        <div class="header">
+            <div class="arrows-wrapper">
+                <img src="../static/assets/arrow-up.svg" class="arrow-up opacity-50">
+                <img src="../static/assets/arrow-down.svg" class="arrow-down">
+            </div>
+            <p class="month">
+                October 2024
+            </p>
+        </div>
+
+        <div class="body">
+            <div class="days-column">
+                <div class="space-block"></div>
+                <div class="days-container"></div>
+            </div>
+            <div class="scrollable-container">
+                <div class="scroll-content">
+                    <div class="times-row">
+                        <div class="time-cell">0:00</div>
+                        <div class="time-cell">1:00</div>
+                        <div class="time-cell">2:00</div>
+                        <div class="time-cell">3:00</div>
+                        <div class="time-cell">4:00</div>
+                        <div class="time-cell">5:00</div>
+                        <div class="time-cell">6:00</div>
+                        <div class="time-cell">7:00</div>
+                        <div class="time-cell">8:00</div>
+                        <div class="time-cell">9:00</div>
+                        <div class="time-cell">10:00</div>
+                        <div class="time-cell">11:00</div>
+                        <div class="time-cell">12:00</div>
+                        <div class="time-cell">13:00</div>
+                        <div class="time-cell">14:00</div>
+                        <div class="time-cell">15:00</div>
+                        <div class="time-cell">16:00</div>
+                        <div class="time-cell">17:00</div>
+                        <div class="time-cell">18:00</div>
+                        <div class="time-cell">19:00</div>
+                        <div class="time-cell">20:00</div>
+                        <div class="time-cell">21:00</div>
+                        <div class="time-cell">22:00</div>
+                        <div class="time-cell">23:00</div>
+                    </div>
+                    <div class="grid-rows-container">
+    
+                    </div>
+
+                    <!-- submissions container -->
+                    <div class="submissions-strips-container">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+    </div>
+
+    <div class="tabs-container">
+    </div>
+
+
+    <!-- MISSING SUBMISSIONS -->
+    <div class="d-flex flex-column py-5 pb-4 mt-5 text-secondary">
+        <p class="fs-3 pb-1 border-bottom-primary text-primary">Missing Submissions</p>
+    </div>
+
+    <div class="missing-submissions-container m-0">
+        {% for name in missing_submissions %}
+            <div>{{name}}</div>
+        {% endfor %}
+    </div>
+
+    
+    <!-- BEST TIMING OPTIONS -->
+    <div class="d-flex flex-column py-5 pb-4 mt-5 text-secondary">
+        <p class="fs-3 pb-1 border-bottom-primary text-primary">Best Timing Options</p>
+    </div>
+
+    <div class="cards-container d-flex align-items-start justify-content-start gap-5" style="flex-wrap: wrap;">    </div>
+    
+</div>
+{% endblock %}
+
+
+{% block script %} 
+<script>
+    // HELPER FUNCTIONS
+
+    // get an array of the days between the start and end data
+    function getDatesInRange(startDate, endDate) {
+        // Helper function to format a Date object to 'dd/mm/yyyy'
+        function formatDate(date) {
+          const day = String(date.getDate()).padStart(2, '0');
+          const month = String(date.getMonth() + 1).padStart(2, '0');
+          const year = date.getFullYear();
+          return `${day}/${month}/${year}`;
+        }
+      
+        // Helper function to get the abbreviated day of the week
+        function getDayName(date) {
+          const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+          return days[date.getDay()];
+        }
+      
+        // Helper function to get the full month name
+        function getMonthName(date) {
+          const months = [
+            'January', 'February', 'March', 'April', 'May', 'June',
+            'July', 'August', 'Sptember', 'October', 'November', 'December'
+          ];
+          return months[date.getMonth()];
+        }
+      
+        const result = [];
+        let currentDate = new Date(startDate);
+        const lastDate = new Date(endDate);
+      
+        // Loop through each date from start to end
+        while (currentDate <= lastDate) {
+          result.push({
+            fullDate: formatDate(currentDate),
+            date: String(currentDate.getDate()).padStart(2, '0'),
+            day: getDayName(currentDate),
+            month: getMonthName(currentDate),
+            year: String(currentDate.getFullYear())
+          });
+      
+          // Move to the next day
+          currentDate.setDate(currentDate.getDate() + 1);
+        }
+      
+        return result;
+      }
+      
+
+    function timeToMinutes(time) {
+        const [hours, minutes] = time.split(':').map(Number);
+        return hours * 60 + minutes;
+    }
+    
+    function count15MinIntervals(startTime, endTime) {
+        const startMinutes = timeToMinutes(startTime);
+        const endMinutes = timeToMinutes(endTime);
+    
+        // Calculate the difference in minutes
+        const differenceInMinutes = endMinutes - startMinutes;
+    
+        // Calculate how many 15-minute intervals are in the difference
+        return differenceInMinutes / 15;
+    }
+</script>
+
+<script>
+    // rendering functions
+    function getCurrMonthYear() {
+        if (currentDates[0].month == currentDates[currentDates.length - 1].month) {
+            return `${currentDates[0].month} ${currentDates[0].year}`
+        }
+        else {
+            return `
+            ${currentDates[0].month.slice(0,3)} ${currentDates[0].year} 
+            - 
+            ${currentDates[currentDates.length - 1].month.slice(0, 3)} ${currentDates[currentDates.length - 1].year}
+            `
+        }
+    }
+
+    function createDayCell(day) {
+        let dayCell = document.createElement('div')
+        dayCell.classList = ['day']
+        dayCell.style.height = rowHeight + 'px'
+        
+        let p = document.createElement('p')
+        p.textContent = day.day + " " + day.date
+
+        dayCell.appendChild(p)
+        return dayCell
+    }
+    
+    function createGridRow() {
+        const gridRow = document.createElement('div')
+        gridRow.classList = ['grid-row']
+        gridRow.style.height = rowHeight + 'px'
+
+        for (let i = 0; i < 24; i++) {
+            const hourBlock = document.createElement('div')
+            hourBlock.classList = ['hour-block']
+
+            let lines = ['15', '30', '45', '60']
+            lines.forEach(a => {
+                const line = document.createElement('div')
+                line.classList = [`m-${a}`]
+                hourBlock.appendChild(line)
+            })
+
+            gridRow.appendChild(hourBlock)
+        }
+
+        return gridRow
+    }
+
+</script>
+
+<script>
+    const upArrow = document.querySelector('.arrow-up')
+    const downArrow = document.querySelector('.arrow-down')
+    const gridRowsContainer = document.querySelector('.grid-rows-container')
+    const daysContainer = document.querySelector('.days-container')
+    const monthYearPlaceholder = document.querySelector('.header .month')
+    const submissionsStripsContainer = document.querySelector('.submissions-strips-container')
+    const tabsContainer = document.querySelector('.tabs-container')
+    const cardsContainer = document.querySelector('.cards-container')
+
+
+    const submissions = {{submissions | tojson}}
+    const event = {{event | tojson}}
+
+
+    // calculate calendar dimensions
+    const rowHeight = Math.max(submissions.length <= 7 ? 30 * submissions.length : 210, 60)
+    const rowsNum = Math.floor(420 / rowHeight)
+    const stripHeight = Math.min(rowHeight / submissions.length, 30)
+
+    let stripWidthTempElement = document.createElement('p')
+    let strip15Width = document.querySelector('.calendar .body .days-column').clientWidth
+    strip15Width = strip15Width > 65 ? 20 : 15
+
+    let rowsMargin = document.querySelector('.calendar .body .days-column .days-container')
+    rowsMargin = Number(window.getComputedStyle(rowsMargin).getPropertyValue('gap').split('px')[0])
+
+    window.addEventListener('resize', () => {
+        let oldStripWidth = strip15Width
+        let oldRowsMargin = rowsMargin
+
+        strip15Width = document.querySelector('.calendar .body .days-column').clientWidth
+        strip15Width = strip15Width > 65 ? 20 : 15
+
+        rowsMargin = document.querySelector('.calendar .body .days-column .days-container')
+        rowsMargin = Number(window.getComputedStyle(rowsMargin).getPropertyValue('gap').split('px')[0])
+
+        if (oldRowsMargin != rowsMargin || oldStripWidth != strip15Width) {
+            renderCalendar()
+        }
+    })
+    
+    // event date range
+    let datesInRange = getDatesInRange(event.start_date, event.end_date)
+    let cursor = 0
+    let currentDates =  [...datesInRange].splice(cursor, rowsNum)
+
+
+    // arrows functionality 
+    function moveCursorBack() {
+        if (cursor > 0) {
+            downArrow.classList.remove('opacity-50')
+
+            cursor = cursor - rowsNum 
+
+            if (cursor <= 0) {
+                cursor = 0
+                upArrow.classList.add('opacity-50')
+            }
+
+
+            currentDates = [...datesInRange].splice(cursor, rowsNum)
+            renderCalendar()
+        }
+    }
+
+    function moveCursorForward() {
+        if (cursor < datesInRange.length - rowsNum) {
+            upArrow.classList.remove('opacity-50')
+
+            cursor = cursor + rowsNum
+            currentDates = [...datesInRange].splice(cursor, rowsNum)
+
+            if (cursor >= datesInRange.length - rowsNum) {
+                downArrow.classList.add('opacity-50')
+            }
+            
+            renderCalendar()
+        }
+    }
+
+    upArrow.addEventListener('click', moveCursorBack)
+    downArrow.addEventListener('click', moveCursorForward)
+    if (rowsNum >= datesInRange.length) downArrow.classList.add('opacity-50')
+
+    
+    // Calendar rendering
+    function renderCalendar() {
+        monthYearPlaceholder.textContent = getCurrMonthYear()
+
+        gridRowsContainer.innerHTML = ''
+        daysContainer.innerHTML = ''
+        submissionsStripsContainer.innerHTML = ''
+        for (let i = 0; i < currentDates.length; i++) {
+
+            //create day cell
+            daysContainer.appendChild(createDayCell(currentDates[i]))
+
+            // create grid row
+            gridRowsContainer.appendChild(createGridRow())
+
+            // create availability strips
+            renderAvailabilityStrips(currentDates[i], i)
+
+        }
+    }
+
+    function renderAvailabilityStrips(currentDate, count) {
+        submissions.forEach((submission, i) => {
+            // get the availability of the current day
+
+            availability = submission.user_availability
+            let dayIntervals = []
+            let found = false
+
+            // search if the availability is specific for this date
+            if (availability.length > 1) {
+                for (let i = 1; i < availability.length; i++) {
+                    if (availability[i].date == currentDate.fullDate) {
+                        dayIntervals = availability[i].intervals
+                        found = true
+                        break
+                    }
+                }
+            }
+            // else use the general availability
+            if (!found) {
+                dayIntervals = availability[0][currentDate.day.toLowerCase()]
+            }
+
+
+            // handle if the tab is disabled
+            let personTab = document.querySelector(`.tab.c-${i+1}`)
+            let hidden = false
+            if (personTab.classList.contains('disabled')) {
+                hidden = true
+            }
+    
+
+            // render the availability
+            dayIntervals.forEach(interval => {
+                const strip = document.createElement('div')
+                strip.classList = [`strip c-${i+1}`]
+                if (hidden) {strip.classList.add('hidden')}
+
+                strip.style.height = stripHeight + 'px'
+
+                strip.style.width = count15MinIntervals(interval[0], interval[1]) * strip15Width + 'px'
+                strip.style.left = count15MinIntervals('0:00', interval[0]) * strip15Width + 'px'
+
+                strip.style.top = 40 + count*(rowHeight + rowsMargin) + i * stripHeight  + 'px'
+
+                submissionsStripsContainer.appendChild(strip)
+            })
+
+        })
+    }
+
+
+    // tabs rendering and functionality
+    function renderTabs() {
+        submissions.forEach((sub, i) => {
+            const tab = document.createElement('div')
+            tab.classList = [`tab c-${i+1}`]
+            tab.textContent = sub.fullname
+            tabsContainer.appendChild(tab)
+
+            tab.addEventListener('click', handleTabClick)
+        })
+    }
+    
+    function handleTabClick(e) {
+        const tab = e.currentTarget
+
+        tab.classList.toggle('disabled')
+
+        let strips = document.querySelectorAll(`.strip.${tab.classList[1]}`)
+        strips.forEach(strip => strip.classList.toggle('hidden'))
+    }
+    
+    renderTabs()
+    renderCalendar()
+</script>
+
+
+<script>
+    // Best Timing Options
+
+    // Helpers
+    function parseTimeToMinutes(time) {
+        const [hours, minutes] = time.split(':').map(Number);
+        return hours * 60 + minutes;
+    }
+    
+    function convertMinutesToTime(minutes) {
+        const hours = Math.floor(minutes / 60);
+        const mins = minutes % 60;
+        return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+    }
+
+    function generateTimeSlots(start, end) {
+        const slots = [];
+        for (let time = start; time < end; time += 15) {
+            slots.push(time);
+        }
+        return slots;
+    }
+
+    function areArraysIdentical(arr1, arr2) {
+        if (arr1.length !== arr2.length) return false;
+        
+        // Create sets from both arrays to ignore the order of elements
+        const set1 = new Set(arr1);
+        const set2 = new Set(arr2);
+        
+        if (set1.size !== set2.size) return false;
+        
+        // Check if every element in set1 is in set2
+        for (let item of set1) {
+            if (!set2.has(item)) {
+            return false;
+            }
+        }
+        
+        return true;
+    }
+    
+
+    const fullDaySlots = generateTimeSlots(0, 1440)
+    let fullSlotsData = []
+    const eventDurationF15 = timeToMinutes(event.duration) / 15
+    let top10options = []
+
+
+    function getAvailabilityInBinary(availability, fullDate, day) {
+        // get day availability
+        // if the availability for this date is not overwritten use the default availability for the day         
+        let dayAvailability = []
+        
+        let found = false
+        if (availability.length > 1) {
+            
+            for (let i = 1; i < availability.length; i++) {
+
+                if (availability[i].date == fullDate) {
+                    dayAvailability = availability[i].intervals
+                    found = true
+                    break
+                }
+            }
+            
+        }
+        if (availability.length == 1 || !found) {
+            dayAvailability = availability[0][day.toLowerCase()]
+        }
+
+        // fill all day slots with 0 if unavailable and 1 if available
+        let binaryAvailability = new Array(24*4).fill(0)
+
+        dayAvailability?.forEach(interval => {
+            let startMins = timeToMinutes(interval[0])
+            let endMins = timeToMinutes(interval[1])
+
+            for (let time = startMins; time < endMins; time += 15) {
+                binaryAvailability[fullDaySlots.indexOf(time)] = 1
+            }
+        })
+
+
+        return binaryAvailability
+    }
+   
+    function calculateSlotsScores() {
+        datesInRange.forEach(({fullDate, day}) => {
+    
+            
+            // Get the number of participants the can fully attend and partially attend for every slot of length == event duration
+            let sliceLength = eventDurationF15
+            let daySlotsData = []
+            for (let i = 0; i < (24*4 - sliceLength + 1); i++) {
+                daySlotsData.push({fullAttandance: [], comingLate: [], leavingEarly: [], score: 0, index: i, date: fullDate})
+            }
+    
+            submissions.forEach((submission, index) => {
+    
+                // get availability in binary (0 for a slot where unavailable) (1 for a slot where available)
+                const availability = getAvailabilityInBinary(submission.user_availability, fullDate, day)
+    
+    
+                // loop the binary availability array chunk by chunk (where each chunk is the length of the duraiton of the event)
+                // push the users id (index) to either fullAttandance/comingLate/leavingEarly/None (if completely unavailable) 
+                for (let cursor = 0; cursor <= availability.length - sliceLength; cursor++) {
+    
+                    let currentSlice = availability.slice(cursor, sliceLength + cursor)
+    
+                    if (!currentSlice.includes(0)) { // full attandance
+    
+                        daySlotsData[cursor].fullAttandance.push(index)
+                    }
+                    else if (currentSlice[0] == 0 && !currentSlice.slice(1).includes(0)) { // coming late
+    
+                        daySlotsData[cursor].comingLate.push(index)
+                    }
+                    else if (currentSlice[sliceLength - 1] == 0 && !currentSlice.slice(0, sliceLength - 1).includes(0)) { // leaving early
+    
+                        daySlotsData[cursor].leavingEarly.push(index)
+                    }
+                }
+                
+            })
+            
+            
+            // Calculate the score for every interval of slots
+            daySlotsData.forEach(({fullAttandance, comingLate, leavingEarly}, i) => {
+                let score = 0
+                
+                // 0 if noone can fully attend
+                // 1.25 if only 1 can fully attend
+                // 2* for every person that can attand if more than 1
+                if (fullAttandance.length > 0) {
+                    score += fullAttandance.length > 1 ? fullAttandance.length * 2 : 1.25
+                }
+    
+                // 1 for every person that can partially attend (bigger group)
+                score += Math.max(comingLate.length, leavingEarly.length) * 1
+                
+                // 0.25 for every person that can partially attend (smaller group)
+                score += Math.min(comingLate.length, leavingEarly.length) * 0.25
+                
+                daySlotsData[i].score = score
+            })
+            
+            // filter out anything equal or below 1.25
+            daySlotsData = daySlotsData.filter(s => s.score > 1.25)
+    
+    
+            fullSlotsData.push(...daySlotsData)
+        })
+    
+        fullSlotsData.sort((a,b) => b.score - a.score)
+    }
+
+    function calculateTop10Options() {
+        for (let i = 0; i < fullSlotsData.length; i++) {
+            let start = fullSlotsData[i]
+            let end = fullSlotsData[i]
+    
+            for (let j = i + 1; j <= fullSlotsData.length; j++) {
+                let lastLoop = false
+                if (j == fullSlotsData.length) {
+                    lastLoop = true
+                    j--
+                }
+    
+                let current = fullSlotsData[j]
+    
+                if (
+                    current.date == start.date && current.index == end.index + 1  && current.score == end.score  && areArraysIdentical(current.fullAttandance, end.fullAttandance) && areArraysIdentical(current.comingLate, end.comingLate) && areArraysIdentical(current.leavingEarly, end.leavingEarly)
+                ) {
+                    end = current
+                }
+                else {
+                    top10options.push({
+                        score: end.score, 
+                        fullAttandance: end.fullAttandance,
+                        comingLate: end.comingLate,
+                        leavingEarly: end.leavingEarly,
+                        date: end.date,
+                        start: convertMinutesToTime(start.index * 15),
+                        end: convertMinutesToTime((end.index + eventDurationF15) * 15)
+                    })
+                    if (!lastLoop) {
+                        i = j - 1 // -1 to counter the i++ in the for loop
+                        j = fullSlotsData.length
+                    }
+                    else {
+                        i = fullDaySlots.length + 10
+                        j = fullDaySlots.length + 10
+                    }
+    
+                    // break
+                    if (top10options.length == 10) {
+                        i = fullSlotsData.length
+                    }
+                }
+            }
+    
+        }
+    }    
+
+    function displayTopOption(top10options) {
+        const months = [
+            'January', 'February', 'March', 'April', 'May', 'June',
+            'July', 'August', 'Sptember', 'October', 'November', 'December'
+        ];
+
+        top10options.forEach(opt => {
+
+            let {fullAttandance, comingLate, leavingEarly, date, start, end} = opt
+
+            const [dateNum, month, year] = date.split('/').map(Number);
+            const day = new Date(year, month - 1, dateNum).toLocaleDateString('en-US', { weekday: 'short' })
+            date = `${day} ${dateNum} ${months[month]} ${year}`
+
+            let duration = eventDurationF15 * 15;
+
+
+            if (fullAttandance.length <= 1 && (comingLate.length || leavingEarly.length)) {
+                duration = duration - 15
+
+                if (comingLate.length > leavingEarly.length) {
+                    start = convertMinutesToTime( timeToMinutes(start) + 15 )
+
+                    fullAttandance = [...comingLate , ...fullAttandance]
+                    comingLate = []
+                }
+                else {
+                    end = convertMinutesToTime( timeToMinutes(end) - 15 )
+
+                    fullAttandance = [...leavingEarly , ...fullAttandance]
+                    leavingEarly = []
+                }
+            }
+
+            [hour, min] = convertMinutesToTime(duration).split(':')
+            duration = ''
+            duration += hour != '00' ? `${hour}hr` : ''
+            duration += min != '00' ? `${min}min` : ''
+
+            fullAttandance = fullAttandance.map(personIndex => submissions[personIndex].fullname)
+            comingLate = comingLate.map(personIndex => submissions[personIndex].fullname)
+            leavingEarly = leavingEarly.map(personIndex => submissions[personIndex].fullname)
+            
+            createOptionCard({start, end, duration, date, fullAttandance, comingLate, leavingEarly})
+        })
+    }
+
+    function createOptionCard({start, end, duration, date, fullAttandance, comingLate, leavingEarly}) {
+        const card = document.createElement('div')
+        card.classList = ['card p-4']
+        card.style.maxWidth = '22rem'
+
+        // timing section
+        const timingSection = document.createElement('div')
+        timingSection.classList = ['card-section']
+
+        const dateP = document.createElement('p')
+        dateP.classList = ['date fw-medium fs-5']
+        dateP.textContent = date
+        timingSection.appendChild(dateP)
+        
+        const timingWrapper = document.createElement('div')
+        timingWrapper.classList = ["d-flex justify-content-between align-items-end"]
+
+        const timingP = document.createElement('p')
+        timingP.classList = ["date opacity-70 fw-light fs-5"]
+        timingP.textContent = `${start} -> ${end}`
+        timingWrapper.appendChild(timingP)
+        
+        const durationP = document.createElement('p')
+        durationP.classList = ["date opacity-70 fw-light fs-6"]
+        durationP.textContent = duration
+        timingWrapper.appendChild(durationP)
+
+
+        timingSection.appendChild(timingWrapper)
+        card.appendChild(timingSection)
+
+
+        
+        // Full Duration Attandees
+        if (fullAttandance.length) {
+            const fullAttandeesSection = document.createElement('div')
+            fullAttandeesSection.classList = ['card-section mt-4']
+    
+            const fullAttandeesTitle = document.createElement('p')
+            fullAttandeesTitle.classList = ['opacity-50 border-bottom-primary fw-light mb-2']
+            fullAttandeesTitle.style.width = 'fit-content'
+            fullAttandeesTitle.textContent = `Full Duration Attendees (${fullAttandance.length}):`
+            fullAttandeesSection.appendChild(fullAttandeesTitle)
+    
+            const fullAttandeesList = document.createElement('p')
+            fullAttandeesList.classList = ['fw-light fs-6']
+            fullAttandeesList.textContent = fullAttandance.join(' - ')
+            fullAttandeesSection.appendChild(fullAttandeesList)
+    
+            card.appendChild(fullAttandeesSection)
+        }
+
+        
+        // Attandees Coming Late
+        if (comingLate.length) {
+            const lateAttendeesSection = document.createElement('div')
+            lateAttendeesSection.classList = ['card-section mt-4']
+    
+            const lateAttendeesTitle = document.createElement('p')
+            lateAttendeesTitle.classList = ['opacity-50 border-bottom-primary fw-light mb-2']
+            lateAttendeesTitle.style.width = 'fit-content'
+            lateAttendeesTitle.textContent = `Attendees Arriving 15mins Late (${comingLate.length}):`
+            lateAttendeesSection.appendChild(lateAttendeesTitle)
+    
+            const lateAttendeesList = document.createElement('p')
+            lateAttendeesList.classList = ['fw-light fs-6']
+            lateAttendeesList.textContent = comingLate.join(' - ')
+            lateAttendeesSection.appendChild(lateAttendeesList)
+    
+            card.appendChild(lateAttendeesSection)
+        }
+
+        
+        // Attandees Leaving Early
+        if (leavingEarly.length) {
+            const leavingAttendeesSection = document.createElement('div')
+            leavingAttendeesSection.classList = ['card-section mt-4']
+    
+            const leavingAttendeesTitle = document.createElement('p')
+            leavingAttendeesTitle.classList = ['opacity-50 border-bottom-primary fw-light mb-2']
+            leavingAttendeesTitle.style.width = 'fit-content'
+            leavingAttendeesTitle.textContent = `Attendees Leaving 15mins Early (${leavingEarly.length}):`
+            leavingAttendeesSection.appendChild(leavingAttendeesTitle)
+    
+            const leavingAttendeesList = document.createElement('p')
+            leavingAttendeesList.classList = ['fw-light fs-6']
+            leavingAttendeesList.textContent = leavingEarly.join(' - ')
+            leavingAttendeesSection.appendChild(leavingAttendeesList)
+    
+            card.appendChild(leavingAttendeesSection)
+    
+        }
+        cardsContainer.appendChild(card)
+    }
+
+    
+    calculateSlotsScores()
+    calculateTop10Options()
+    displayTopOption(top10options)
+</script>
+
+{% endblock %}

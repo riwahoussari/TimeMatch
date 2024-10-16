@@ -1,0 +1,507 @@
+{% extends "layout-2.html" %}
+
+{% block title %}{{data.name}}{% endblock %}
+{% block title2 %}{{data.name}}{% endblock %}
+
+{% block main %}
+
+<form id="event-info-form">
+    <!-- Event Details -->
+    <div class="d-flex flex-column">
+        <div class="d-flex flex-column py-5 pb-4 text-secondary">
+            <p class="fs-3 pb-1 border-bottom-primary text-primary">Event Details</p>
+        </div>
+
+        <div class="form-container flex-wrap flex-wrap d-flex">
+            <div class='wrapper'>
+                <div id="event-title-wrapper">
+                    <label for="event-title">Event Name *</label>
+                    <input type="text" id="event-title" name="event-title" placeholder="Event name" class="form-control mb-5 mt-1" value="{{data.name}}">
+                </div>
+
+                <div id="event-location-wrapper">
+                    <label for="event-location">Event Location *</label>
+                    <input type="text" id="event-location" name="event-location" placeholder="Event location" class="form-control mb-5 mt-1" value="{{data.location}}">
+                </div>
+                
+                <div id="event-description-wrapper">
+                    <label for="event-description">Event Description *</label>
+                    <textarea rows="5" id="event-description" name="event-description" placeholder="Event description" class="form-control mt-1">{{data.description}}</textarea>
+                </div>
+            </div>
+
+            <div class='wrapper'>
+                
+                <div id="event-date-range-wrapper">
+                    <label for="start-date">Event Date Range *</label>
+                    <div>
+                        <div class="d-flex gap-2 align-items-center mb-3 mt-1">
+                            <label for="start-date" class="opacity-70 ">Start Date : {{data.startDate}}</label>
+                        </div>
+                        <div class="d-flex gap-2 align-items-center mb-5">
+                            <label for="end-date" class="opacity-70 ">End Date : {{data.endDate}}</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="event-duration-wrapper">
+                    <label for="duration-hours">Event duration *</label>
+                    <div class="d-flex gap-2 align-items-center mb-5 mt-1">
+                        
+                        <label for="duration-hours" class="me-3 opacity-70">{{data.duration.hours}} hr</label>
+                        <label for="duration-mins" class="opacity-70">{{data.duration.mins}} min</label>
+                    </div>
+                </div>
+
+                <div id="event-deadline-wrapper">
+                    <label for="event-deadline">Submission Deadline *</label>
+                    <input type="date" id="event-deadline" name="event-deadline" placeholder="Event deadline" class="form-control mb-5 mt-2"  value="{{data.deadline}}">
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Sharing Details -->
+    <div class="d-flex flex-column mt-5">
+        <div class="d-flex flex-column py-5 pb-4 text-secondary">
+            <p class="fs-3 pb-1 border-bottom-primary text-primary">Sharing Details</p>
+        </div>
+
+        
+        <div class="d-flex form-container flex-wrap">
+            <div class='wrapper'>
+                <div id="event-privacy-wrapper">
+                    <label>Privacy *</label>
+                    <div class="d-flex mb-5 mt-2">
+                        {% if data.privacy == 'public' %}
+                        <input type="radio" name="privacy" value="public" id="public" class="form-check-input me-1" checked>
+                        <label for="public">Public</label>
+                        <input type="radio" name="privacy" value="private" id="private" class="form-check-input me-1 ms-4">
+                        <label for="private">Private</label>
+                        {% else %}
+                        <input type="radio" name="privacy" value="public" id="public" class="form-check-input me-1">
+                        <label for="public">Public</label>
+                        <input type="radio" name="privacy" value="private" id="private" class="form-check-input me-1 ms-4" checked>
+                        <label for="private">Private</label>
+                        {% endif %}
+                    </div>
+                </div>
+
+                
+                <div id="event-password-wrapper">
+                    <label for="event-password">Event Password *</label>
+                    <p class="opacity-50 fw-light mt-2" style="font-size: 12px;line-height: 1.1;">People that don’t have an account can use this password to access the event.</p>
+                    <input type="text" name="event-password" id="event-password" class="form-control my-1" value="{{data.password}}" placeholder="Password">
+                    <p class="opacity-50 fw-light" style="font-size: 12px;">8 characters (letters and digits only)</p>
+                </div>
+            </div>
+
+            <div class='wrapper'>
+                <div id="broadcast-lists-wrapper">
+                    <label for="broadcast-lists">Invitees - Broadcast Lists</label>
+                    <div class="d-flex gap-3 mt-2 mb-4">
+                        <select name="broadcast-lists" id="broadcast-lists" class="form-select">
+                            <option selected disabled value="">Choose A List</option>
+                            {% for list in data.allLists %}
+                                <option value="{{list.id}}">{{list.name}}</option>
+                            {% endfor %}
+                        </select>
+                        <img src="../static/assets/plus.svg"  class="btn btn-secondary add-list-btn">
+                    </div>
+                    <div class="rows-container mb-5">
+                        {% for list in data.addedLists %}
+                        <div class="d-flex gap-3 mt-3 pe-2" id="{{list.id}}">
+                            <p class="list-name text-secondary">{{list.name}}</p>
+                            <img src="../static/assets/close.svg" alt="" class="close-icon">
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div id="individuals-list-wrapper">
+                    <label for="individuals-list">Invitees - Individuals Lists</label>
+                    <p class="opacity-50 fw-light mt-2" style="font-size: 12px;line-height: 1.1;">You can only add people that have created an account.</p>
+                    <div class="d-flex gap-3 mt-2 mb-4">
+                        <input name="individuals-list" id="individuals-list" class="form-control" type="email" placeholder="example@gmail.com">
+                        <img src="../static/assets/plus.svg"  class="btn btn-secondary add-person-btn">
+                    </div>
+                    <div class="rows-container">
+                        {% for user in data.addedUsers %}
+                        <div class="d-flex gap-3 mt-3 pe-2" id="{{user.id}}">
+                            <p class="list-name text-secondary">{{user.email}}</p>
+                            <img src="../static/assets/close.svg" alt="" class="close-icon">
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <button class="btn btn-primary mt-5" style="width: 100%;">Update Event</button>
+</form>
+    
+   
+{% endblock %}
+
+
+{% block script %}
+
+<script>
+    //////////// Form Validation
+    const form = document.querySelector('form')
+    const titleInput = document.getElementById('event-title')
+    const descriptionInput = document.getElementById('event-description')
+    const locationInput = document.getElementById('event-location')
+    const deadlineInput = document.getElementById('event-deadline')
+    const passwordInput = document.getElementById('event-password')
+
+    
+    // Set deadline date input to have a minimum of today
+    const today = new Date().toISOString().split('T')[0];
+    deadlineInput.setAttribute('min', today);
+    
+    // Change submissions deadline maximum based on end date 
+    const endDate = '{{data.endDateHtmlFormat}}'
+    deadlineInput.setAttribute('max', endDate);
+
+
+    // Password input formatting
+    passwordInput.addEventListener('input', (e) => {
+        // Convert input to uppercase
+        const upperCaseValue = event.target.value.toUpperCase();
+        
+        // Check for valid characters (letters and numbers)
+        const validValue = upperCaseValue.replace(/[^A-Z0-9]/g, '');
+        
+        // Set the valid value back to the input field
+        event.target.value = validValue;
+
+        if (validValue.length != 8) {
+            event.target.setCustomValidity('Password must be exactly 8 characters long.');
+        }
+        else {
+            event.target.setCustomValidity(''); // Clear custom validity if valid
+        }
+    });
+
+
+    form.addEventListener('submit', (e) => {
+        const today = new Date().toISOString().split('T')[0];
+
+        e.preventDefault()
+        // Make sure event title is provided
+        if (!titleInput.value) {appendAlert('Event title is missing', 'danger'); return}
+        // Make sure event description is provided
+        if (!descriptionInput.value) {appendAlert('Event description is missing', 'danger'); return}
+        // Make sure event location is provided
+        if (!locationInput.value) {appendAlert('Event location is missing', 'danger'); return}
+        // Make sure deadline is provided
+        if (!deadlineInput.value) {appendAlert('Submission deadline is missing', 'danger'); return}
+        else if (new Date(deadlineInput.value) < today) {appendAlert('Submission deadline must be in the future', 'danger'); return}
+         
+        // Make sure deadline is before or equal to end date
+        if (new Date(endDate) < new Date(deadlineInput.value)) {
+            appendAlert('The deadline date must be on or before the end date.', 'danger')
+            return
+        }
+
+
+
+        let privacy = document.querySelector('input[name="privacy"]:checked')
+        if (!privacy || !['public', 'private'].includes(privacy.value)){
+            appendAlert("Privacy type must be selected", 'danger')
+            return
+        }
+        
+        if (privacy.value == 'private') {
+            // validate password
+            let passwordValue = passwordInput.value
+            if (passwordValue.length != 8) {
+                appendAlert('Password must be exactly 8 characters long.', 'danger')
+                return
+            }
+
+            passwordValue = passwordValue.toUpperCase()
+            let validValue = passwordValue.toUpperCase().replace(/[^A-Z0-9]/g, '')
+        
+            if (passwordValue != validValue) {
+                appendAlert('Password must only contain digits and letters.', 'danger')
+                return
+            }
+        }
+
+        // submit form
+        const eventHash = window.location.href.split('/').pop();
+        fetch(`/event/${eventHash}`, {
+            method: 'patch',
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({
+                title: titleInput.value,
+                description: descriptionInput.value,
+                location: locationInput.value,
+                deadline: deadlineInput.value,
+                privacy: privacy.value,
+                password: passwordInput.value,
+                added_users: addedEmails,
+                added_lists: addedLists 
+            })
+        })
+        .then(res => {
+            if (!res.ok) {
+                appendAlert("Network response error. Try again later.", 'warning')
+                throw new Error("Network response was not okay")
+            }
+            return res.json()
+        })
+        .then(data => {
+            if (data.success) {
+                appendAlert('Event Updated Successfully!', 'success')
+                window.location.href = '/#my-events'
+            }
+            else if (data.status && data.status == 401) {
+                window.location.reload()
+            }
+            else {
+                appendAlert(data.message, 'danger')
+            }
+        })
+        .catch(err => console.log(err))
+    })
+
+</script>
+
+
+
+
+
+
+<script>
+    const privacyRadios = document.querySelectorAll('input[type="radio"]')
+    const eventPasswordWrapper = {
+        element: document.getElementById('event-password-wrapper'),
+        container: document.getElementById('event-password-wrapper').parentElement
+    }
+    const broadcastListsWrapper = {
+        element: document.getElementById('broadcast-lists-wrapper'),
+        container: document.getElementById('broadcast-lists-wrapper').parentElement
+    }
+    const individualsListWrapper = {
+        element: document.getElementById('individuals-list-wrapper'),
+        container: document.getElementById('individuals-list-wrapper').parentElement
+    }
+    const container = eventPasswordWrapper.parentElement
+
+    // initially hide privacy related fields if privacy is set to public
+    if (privacyRadios[0].checked) {
+        eventPasswordWrapper.element.remove()
+        broadcastListsWrapper.element.remove()
+        individualsListWrapper.element.remove()
+    }
+    
+    // show - hide privacy related fields when toggling between 'public' and 'private'
+    privacyRadios.forEach(radio => {
+        radio.addEventListener('change', () => {
+            if (radio.value == 'public') {
+                eventPasswordWrapper.element.remove()
+                broadcastListsWrapper.element.remove()
+                individualsListWrapper.element.remove()
+            }
+            else {
+                eventPasswordWrapper.container.appendChild(eventPasswordWrapper.element)
+                broadcastListsWrapper.container.appendChild(broadcastListsWrapper.element)
+                individualsListWrapper.container.appendChild(individualsListWrapper.element)
+            }
+        })
+    })
+
+    
+
+    // Broadcast lists functionality
+    let addedLists = [
+        {% for list in data.addedLists %}
+            {{ list.id }}{% if not loop.last %}, {% endif %}
+        {% endfor %}
+    ];
+    let options = [...broadcastListsWrapper.element.querySelectorAll('option')]
+    options = options.filter(o => !o.disabled)
+    const broadcastListsSelect = broadcastListsWrapper.element.querySelector('select')
+    const addBroadcastListBtn = broadcastListsWrapper.element.querySelector('.add-list-btn')
+
+    // remove broadcast lists that are already added from <select> options 
+    options.forEach(option => {
+        if (addedLists.includes(Number(option.value))){
+            option.remove()
+        }
+    })
+
+    // add event listeners to the close icons that are already displayed
+    broadcastListsWrapper.element.querySelectorAll('.close-icon').forEach(icon => {
+        icon.addEventListener('click', handleListRemoveIconClick, {once: true})
+    })
+
+    addBroadcastListBtn.addEventListener('click', () => {
+        if (!broadcastListsSelect.value) {
+            appendAlert('Please select a list', 'danger')
+        }
+        else if (addedLists.includes(broadcastListsSelect.value)) {
+            appendAlert('List already added.', 'danger')
+        }
+        else {
+            // add list to addedLists
+            addedLists.push(broadcastListsSelect.value)
+            
+            // remove the selected <option> from the <select> list
+            let selectedOption = options.filter(o => o.value == broadcastListsSelect.value)[0]
+            selectedOption.selected = false
+            selectedOption.remove()
+            broadcastListsSelect.querySelector('option[value=""]').selected = true
+
+            // create and add a new row
+            let row = document.createElement('div')
+            row.classList = ['d-flex gap-3 mt-3 pe-2']
+            row.id = selectedOption.value
+            
+            let p = document.createElement('p')
+            p.classList = ['list-name text-secondary']
+            p.textContent = selectedOption.textContent
+            row.appendChild(p)
+
+            let closeIcon = document.createElement('img')
+            closeIcon.setAttribute('src', '../static/assets/close.svg')
+            closeIcon.classList.add('close-icon')
+            closeIcon.addEventListener('click', handleListRemoveIconClick, {once: true})
+            row.appendChild(closeIcon)
+
+            broadcastListsWrapper.element.querySelector('.rows-container').appendChild(row)
+        }
+    })
+
+    function handleListRemoveIconClick(e) {
+        let id = e.currentTarget.parentElement.id
+        let option = options.filter(o => o.value == id)[0]
+
+        // readd <option> to <select> list
+        broadcastListsSelect.appendChild(option)
+        option.selected = false
+        broadcastListsSelect.querySelector('option[value=""]').selected = true
+        
+        // remove row and remove list from addedLists
+        e.currentTarget.parentElement.remove()
+        addedLists = addedLists.filter(i => i != id)
+    }
+
+
+
+    // Individuals list functionality
+    let addedEmails = [
+        {% for user in data.addedUsers %}
+            { id: '{{user.id}}', email: '{{user.email}}' } {% if not loop.last %}, {% endif %}
+        {% endfor %}
+    ];
+    const addPersonBtn = individualsListWrapper.element.querySelector('.add-person-btn')
+    const addPersonEmailInpt = individualsListWrapper.element.querySelector("#individuals-list")
+
+    // add event listeners to the close icons that are already displayed
+    individualsListWrapper.element.querySelectorAll('.close-icon').forEach(icon => {
+        icon.addEventListener('click', handlePersonRemoveIconClick, {once: true})
+    })
+
+    addPersonBtn.addEventListener('click', () => {
+        if (!addPersonEmailInpt.value) {
+            appendAlert('Enter an  email', 'danger')
+        }
+        else if (!isValidEmail(addPersonEmailInpt.value)){
+            appendAlert('Enter a valid email.', 'danger')
+        } 
+        else if (isEmailInList(addPersonEmailInpt.value)) {
+            appendAlert('Email already added.', 'danger')
+        } 
+
+        else {
+            // check if a user exists with that email and add it to the list
+            fetch('/api/user-exists', {
+                method: "post",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({email: addPersonEmailInpt.value})
+            })
+            .then(res => {
+                if (!res.ok) {
+                    throw new Error('Network response was not ok.')
+                    appendAlert('Network problem. Try again later.')
+                }
+                return res.json()
+            })
+            .then(data => {
+                if (data.success) {
+                    addPersonRow(data.user)
+                }
+                else if (data.status && data.status == 401) {
+                    window.location.reload()
+                }
+                else {
+                    appendAlert(data.message, 'danger')
+                }
+            })
+            .catch(err => console.log(err))
+
+        }
+    })
+
+    function addPersonRow(person) {
+        // add person email to addedEmails
+        addedEmails.push({id: person.id, email: person.email})
+
+        // clear email input
+        addPersonEmailInpt.value = ''
+
+        // create and add a new row
+        let row = document.createElement('div')
+        row.classList = ['d-flex gap-3 mt-3 pe-2']
+        row.id = person.id
+        
+        let p = document.createElement('p')
+        p.classList = ['list-name text-secondary']
+        p.textContent = person.email
+        row.appendChild(p)
+
+        let closeIcon = document.createElement('img')
+        closeIcon.setAttribute('src', '../static/assets/close.svg')
+        closeIcon.classList.add('close-icon')
+        closeIcon.addEventListener('click', handlePersonRemoveIconClick, {once: true})
+        row.appendChild(closeIcon)
+
+        individualsListWrapper.element.querySelector('.rows-container').appendChild(row)
+    }
+
+    function handlePersonRemoveIconClick(e) {
+        let id = e.currentTarget.parentElement.id
+
+        // remove person from list
+        addedEmails = addedEmails.filter(obj => obj.id != id)
+        // remove row
+        e.currentTarget.parentElement.remove()
+    }
+
+    ////////// Helper Functions
+    function isValidEmail(email) {
+        const regex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+        return regex.test(email);
+    }
+
+    function isEmailInList(email) {
+        for (let i = 0; i < addedEmails.length; i++) {
+            if (email == addedEmails[i].email) {
+                return true
+            }
+        }
+        return false
+    }
+
+</script>
+
+
+
+{% endblock %}

@@ -1,3 +1,11 @@
-venv/
+# Python
 __pycache__/
 *.pyc
+
+# Virtual Environment
+venv/
+.env
+
+# IDE Configurations
+.vscode/
+.idea/

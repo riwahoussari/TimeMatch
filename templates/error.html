@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- bootstap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+
+    <title>OOPS</title>
+</head>
+
+
+<body class="bg-primary text-light px-5 py-5">
+    <header>
+        <nav class="navbar border-bottom-primary navbar-expand-sm bg-primary fixed-top px-5" data-bs-theme="dark">
+            <div class="container-fluid px-0">
+              <a class="navbar-brand" href="/" style="color: var(--blue-color);">
+                <img src="../static/assets/TIMEMATCH.svg" alt="">
+              </a>
+              <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavAltMarkup" aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+              </button>
+              <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
+                <div class="navbar-nav ms-auto">
+                {% if data.loggedin %}
+                  <a class="nav-link ms-3 {%block navlink1%}{%endblock%}" href="/">All Events</a>
+                  <a class="nav-link ms-3 {%block navlink2%}{%endblock%}" href="/my-availability">My Availability</a>
+                  <a class="nav-link ms-3 pe-0 {%block navlink3%}{%endblock%}" href="/broadcast-lists">Broadcast Lists</a>
+                  {% else %}
+                  <a class="nav-link ms-3" href="/login">Log In</a>
+                  <a class="nav-link ms-3 pe-0" href="/Register">Register</a>
+                    
+                {% endif %}
+                </div>
+              </div>
+            </div>
+          </nav>
+    </header>
+
+    <main>
+        <div class="d-flex flex-column align-items-center justify-content-center text-secondary" style="min-height: 80vh;">
+            <h1 class="display-1 opacity-70">{{data.code}}</h1>
+            <p class="h5 opacity-70 text-center" style="width: min(100%, 450px)">{{data.message}}</p>
+
+            <p class="h6 fw-light mt-5">
+                {% if data.code == '404' %}
+                <a href="/" class="btn btn-primary">Back To Homepage</a>
+
+                {% elif data.message == 'You have already submitted your availability for this event.' %}
+                <a href='/change-availability/{{data.eventHash}}' class="btn btn-primary">Change Availability Instead</a>
+
+                {% endif %}
+            </p>
+        </div>
+    </main>
+
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+
+
+</body>
+</html>

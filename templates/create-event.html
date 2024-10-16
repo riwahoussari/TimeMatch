@@ -1,0 +1,535 @@
+{% extends "layout-2.html" %}
+
+{% block title %}Create New Event{% endblock %}
+{% block title2 %}Create New Event{% endblock %}
+
+{% block main %}
+<form id="event-info-form">
+    <!-- Event Details -->
+    <div class="d-flex flex-column">
+
+        <div class="d-flex flex-column py-5 pb-4 text-secondary">
+            <p class="fs-3 pb-1 border-bottom-primary text-primary">Event Details</p>
+        </div>
+
+        <div class="form-container flex-wrap d-flex">
+            <div class='wrapper'>
+                <div id="event-title-wrapper">
+                    <label for="event-title">Event Name *</label>
+                    <input type="text" id="event-title" name="event-title" placeholder="Event name" class="form-control mb-5 mt-1" required>
+                </div>
+
+                <div id="event-location-wrapper">
+                    <label for="event-location">Event Location *</label>
+                    <input type="text" id="event-location" name="event-location" placeholder="Event location" class="form-control mb-5 mt-1" required>
+                </div>
+                
+                <div id="event-description-wrapper">
+                    <label for="event-description">Event Description *</label>
+                    <textarea rows="5" id="event-description" name="event-description" placeholder="Event description" class="form-control mt-1" required></textarea>
+                </div>
+            </div>
+
+            <div class='wrapper'>
+                <div id="event-date-range-wrapper">
+                    <label for="start-date">Event Date Range *</label>
+                    <div>
+                        <div class="d-flex gap-2 align-items-center mb-3 mt-2">
+                            <label for="start-date" class="opacity-70 fw-light" style="width: 5rem">Start Date : </label>
+                            <input type="date" name="start-date" id="start-date" class="form-control" required>
+                        </div>
+                        <div class="d-flex gap-2 align-items-center  mb-5 ">
+                            <label for="end-date" class="opacity-70 fw-light" style="width: 5rem">End Date : </label>
+                            <input type="date" name="end-date" id="end-date" class="form-control" required>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="event-duration-wrapper">
+                    <label for="duration-hours">Event duration *</label>
+                    <div class="d-flex gap-2 align-items-center mb-5 mt-2">
+                        <select name="duration-hours" id="duration-hours">
+                            <option value="0" selected>0</option>
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                            <option value="5">5</option>
+                            <option value="6">6</option>
+                            <option value="7">7</option>
+                            <option value="8">8</option>
+                            <option value="9">9</option>
+                            <option value="10">10</option>
+                            <option value="11">11</option>
+                            <option value="12">12</option>
+                            <option value="13">13</option>
+                            <option value="14">14</option>
+                            <option value="15">15</option>
+                            <option value="16">16</option>
+                            <option value="17">17</option>
+                            <option value="18">18</option>
+                            <option value="19">19</option>
+                            <option value="20">20</option>
+                            <option value="21">21</option>
+                            <option value="22">22</option>
+                            <option value="23">23</option>
+                        </select>
+                        <label for="duration-hours" class="me-3">hr</label>
+                        <select name="duration-mins" id="duration-mins">
+                            <option value="0" selected>00</option>
+                            <option value="15">15</option>
+                            <option value="30">30</option>
+                            <option value="45">45</option>
+                        </select>
+                        <label for="duration-mins">min</label>
+                    </div>
+                </div>
+
+                <div id="event-deadline-wrapper">
+                    <label for="event-deadline">Submission Deadline *</label>
+                    <input type="date" id="event-deadline" name="event-deadline" placeholder="Event deadline" class="form-control mt-2" required>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Sharing Details -->
+    <div class="d-flex flex-column mt-5">
+        <div class="d-flex flex-column py-5 pb-4 text-secondary">
+            <p class="fs-3 pb-1 border-bottom-primary text-primary">Sharing Details</p>
+        </div>
+
+        <div class="d-flex form-container flex-wrap">
+            <div class='wrapper'>
+                <div id="event-privacy-wrapper">
+                    <label>Privacy *</label>
+                    <div class="d-flex align-items-center mb-5 mt-2">
+                        <input type="radio" name="privacy" value="public" id="public" class="form-check-input me-1" checked required>
+                        <label class="text-primary ms-1" style="font-weight: 400;" for="public">Public</label>
+                        <input type="radio" name="privacy" value="private" id="private" class="form-check-input me-1 ms-4">
+                        <label class="text-primary ms-1" style="font-weight: 400;" for="private" >Private</label>
+                    </div>
+                </div>
+
+                <div id="event-password-wrapper" class="hidden">
+                    <label for="event-password">Event Password *</label>
+                    <p class="opacity-50 fw-light mt-2" style="font-size: 12px;line-height: 1.1;">People that don’t have an account can use this password to access the event.</p>
+                    <input type="text" name="event-password" id="event-password" class="form-control my-1" maxlength="8" style="text-transform: uppercase;">
+                    <p class="opacity-50 fw-light" style="font-size: 12px;">8 characters (letters and digits only)</p>
+                </div>
+            </div>
+
+            <div class='wrapper'>
+                <div id="broadcast-lists-wrapper" class="hidden">
+                    <label for="broadcast-lists">Invitees - Broadcast Lists</label>
+                    <div class="d-flex gap-3 mt-2 mb-4">
+                        <select name="broadcast-lists" id="broadcast-lists" class="form-select">
+                            <option selected disabled value="">Choose A List</option>
+                        </select>
+                        <img src="./static/assets/plus.svg" class="btn btn-secondary add-list-btn">
+                    </div>
+                    <div class="rows-container mb-5"></div>
+                </div>
+
+                <div id="individuals-list-wrapper" class="hidden">
+                    <label for="individuals-list">Invitees - Users Emails</label>
+                    <p class="opacity-50 fw-light mt-2" style="font-size: 12px;line-height: 1.1;">You can only add people that have created an account.</p>
+                    <div class="d-flex gap-3 mt-2 mb-4">
+                        <input name="individuals-list" id="individuals-list" class="form-control" type="email" placeholder="example@gmail.com">
+                        <img src="./static/assets/plus.svg" class="btn btn-secondary add-person-btn">
+                    </div>
+                    <div class="rows-container">
+                        
+                    </div>
+                </div>
+            </div>
+
+        </div>
+        
+    </div>
+
+    <button class="btn btn-primary mt-5" style="width: 100%;">Create Event</button>
+</form>
+   
+{% endblock %}
+
+
+{% block script %} 
+
+<script>
+    //////////// Form Validation
+    const form = document.querySelector('form')
+    const titleInput = document.getElementById('event-title')
+    const descriptionInput = document.getElementById('event-description')
+    const locationInput = document.getElementById('event-location')
+    const startDateInput = document.getElementById('start-date')
+    const endDateInput = document.getElementById('end-date')
+    const deadlineInput = document.getElementById('event-deadline')
+    const durationHours = document.getElementById('duration-hours')
+    const durationMins = document.getElementById('duration-mins')
+    const passwordInput = document.getElementById('event-password')
+
+    
+    // Set deadline date and event start date input to have a minimum of today
+    const today = new Date().toISOString().split('T')[0];
+    deadlineInput.setAttribute('min', today);
+    startDateInput.setAttribute('min', today);
+    endDateInput.setAttribute('min', today);
+    
+    // Change event end date minimum based on start date input
+    startDateInput.addEventListener('change', function() {
+        const selectedStartDate = startDateInput.value;
+        endDateInput.setAttribute('min', selectedStartDate);
+    });
+    // Change submissions deadline maximum based on end date input
+    endDateInput.addEventListener('change', function() {
+        const selectedEndDate = endDateInput.value;
+        deadlineInput.setAttribute('max', selectedEndDate);
+    });
+
+
+    // Password input formatting
+    passwordInput.addEventListener('input', (e) => {
+        // Convert input to uppercase
+        const upperCaseValue = event.target.value.toUpperCase();
+        
+        // Check for valid characters (letters and numbers)
+        const validValue = upperCaseValue.replace(/[^A-Z0-9]/g, '');
+        
+        // Set the valid value back to the input field
+        event.target.value = validValue;
+
+        if (validValue.length != 8) {
+            event.target.setCustomValidity('Password must be exactly 8 characters long.');
+        }
+        else {
+            event.target.setCustomValidity(''); // Clear custom validity if valid
+        }
+    });
+
+
+    form.addEventListener('submit', (e) => {
+        const today = new Date().toISOString().split('T')[0];
+
+        e.preventDefault()
+        // Make sure event title is provided
+        if (!titleInput.value) {appendAlert('Event title is missing', 'danger'); return}
+        // Make sure event description is provided
+        if (!descriptionInput.value) {appendAlert('Event description is missing', 'danger'); return}
+        // Make sure event location is provided
+        if (!locationInput.value) {appendAlert('Event location is missing', 'danger'); return}
+        // Make sure deadline is provided
+        if (!deadlineInput.value) {appendAlert('Submission deadline is missing', 'danger'); return}
+        else if (new Date(deadlineInput.value) < today) {appendAlert('Submission deadline must be in the future', 'danger'); return}
+        // Make sure event start date is provided
+        if (!startDateInput.value) {appendAlert('Event start date is missing', 'danger'); return}
+        else if (new Date(startDateInput.value) < today) {appendAlert('Event start date must be in the future', 'danger'); return}
+        // Make sure event end date is provided
+        if (!endDateInput.value) {appendAlert('Event end date is missing', 'danger'); return}
+        else if (new Date(endDateInput.value) < today) {appendAlert('Event end date must be in the future', 'danger'); return}
+        // Make sure duration is provided
+        if (durationHours.value == 0 && durationMins.value == 0) {
+            appendAlert('Duration must be more than 0', 'danger')
+            return
+        }
+
+        let startDate = new Date(startDateInput.value)
+        let endDate = new Date(endDateInput.value)
+        let deadlineDate = new Date(deadlineInput.value)
+        // Make sure end date is after or equal to start date
+        if (endDate < startDate) {
+            e.preventDefault()
+            appendAlert('The end date must be on or after the start date.', 'danger')
+            return
+        }
+        // Make sure end date is after or equal to deadline
+        if (endDate < deadlineDate) {
+            appendAlert('The deadline date must be on or before the end date.', 'danger')
+            return
+        }
+
+
+
+        let privacy = document.querySelector('input[name="privacy"]:checked')
+        if (!privacy || !['public', 'private'].includes(privacy.value)){
+            appendAlert("Privacy type must be selected", 'danger')
+            return
+        }
+        
+        if (privacy.value == 'private') {
+            // validate password
+            let passwordValue = passwordInput.value
+            if (passwordValue.length != 8) {
+                appendAlert('Password must be exactly 8 characters long.', 'danger')
+                return
+            }
+
+            passwordValue = passwordValue.toUpperCase()
+            let validValue = passwordValue.toUpperCase().replace(/[^A-Z0-9]/g, '')
+        
+            if (passwordValue != validValue) {
+                appendAlert('Password must only contain digits and letters.', 'danger')
+                return
+            }
+        }
+
+        // submit form
+        fetch('/create-event', {
+            method: 'post',
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({
+                title: titleInput.value,
+                description: descriptionInput.value,
+                location: locationInput.value,
+                start_date: startDateInput.value,
+                end_date: endDateInput.value,
+                duration: {hours: durationHours.value , mins: durationMins.value},
+                deadline: deadlineInput.value,
+                privacy: privacy.value,
+                password: passwordInput.value,
+                added_users: addedEmails,
+                added_lists: addedLists 
+            })
+        })
+        .then(res => {
+            if (!res.ok) {
+                appendAlert("Network response error. Try again later.", 'warning')
+                throw new Error("Network response was not okay")
+            }
+            return res.json()
+        })
+        .then(data => {
+            if (data.success) {
+                appendAlert('Event Created Successfully!', 'success')
+                window.location.href = '/#my-events'
+            }
+            else if (data.status && data.status == 401) {
+                window.location.reload()
+            }
+            else {
+                appendAlert(data.message, 'danger')
+            }
+        })
+        .catch(err => console.log(err))
+    })
+
+</script>
+
+
+<script>
+
+    // show - hide privacy related fields when toggling between 'public' and 'private'
+    const privacyRadios = document.querySelectorAll('input[type="radio"]')
+    const eventPasswordWrapper = {
+        element: document.getElementById('event-password-wrapper'),
+        container: document.getElementById('event-password-wrapper').parentElement
+    }
+    const broadcastListsWrapper = {
+        element: document.getElementById('broadcast-lists-wrapper'),
+        container: document.getElementById('broadcast-lists-wrapper').parentElement
+    }
+    const individualsListWrapper = {
+        element: document.getElementById('individuals-list-wrapper'),
+        container: document.getElementById('individuals-list-wrapper').parentElement
+    }
+    const container = eventPasswordWrapper.parentElement
+
+    eventPasswordWrapper.element.remove()
+    broadcastListsWrapper.element.remove()
+    individualsListWrapper.element.remove()
+    eventPasswordWrapper.element.classList.remove('hidden')
+    broadcastListsWrapper.element.classList.remove('hidden')
+    individualsListWrapper.element.classList.remove('hidden')
+    
+    privacyRadios.forEach(radio => {
+        radio.addEventListener('change', () => {
+            if (radio.value == 'public') {
+                eventPasswordWrapper.element.querySelector('input').required = false
+                eventPasswordWrapper.element.remove()
+                broadcastListsWrapper.element.remove()
+                individualsListWrapper.element.remove()
+            }
+            else if (radio.value == 'private') {
+                eventPasswordWrapper.element.querySelector('input').required = true
+                eventPasswordWrapper.container.appendChild(eventPasswordWrapper.element)
+                broadcastListsWrapper.container.appendChild(broadcastListsWrapper.element)
+                individualsListWrapper.container.appendChild(individualsListWrapper.element)
+            }
+        })
+    })
+
+
+    // Broadcast lists functionality
+    let addedLists = []
+    const options = []
+    const broadcastListsSelect = broadcastListsWrapper.element.querySelector('select')
+    const addBroadcastListBtn = broadcastListsWrapper.element.querySelector('.add-list-btn')
+
+    addBroadcastListBtn.addEventListener('click', () => {
+        if (!broadcastListsSelect.value) {
+            appendAlert('Please select a list', 'danger')
+        }
+        else if (addedLists.includes(broadcastListsSelect.value)) {
+            appendAlert('List already added.', 'danger')
+        }
+        else {
+            // add list to addedLists
+            addedLists.push(broadcastListsSelect.value)
+            
+            // remove the selected <option> from the <select> list
+            let selectedOption = options.filter(o => o.value == broadcastListsSelect.value)[0]
+            selectedOption.selected = false
+            selectedOption.remove()
+            broadcastListsSelect.querySelector('option[value=""]').selected = true
+
+            // create and add a new row
+            let row = document.createElement('div')
+            row.classList = ['d-flex gap-3 mt-3 pe-2']
+            row.id = selectedOption.value
+            
+            let p = document.createElement('p')
+            p.classList = ['list-name text-secondary']
+            p.textContent = selectedOption.textContent
+            row.appendChild(p)
+
+            let closeIcon = document.createElement('img')
+            closeIcon.setAttribute('src', '/static/assets/close.svg')
+            closeIcon.addEventListener('click', handleListRemoveIconClick, {once: true})
+            row.appendChild(closeIcon)
+
+            broadcastListsWrapper.element.querySelector('.rows-container').appendChild(row)
+        }
+    })
+
+    function handleListRemoveIconClick(e) {
+        let id = e.currentTarget.parentElement.id
+        let option = options.filter(o => o.value == id)[0]
+
+        // readd <option> to <select> list
+        broadcastListsSelect.appendChild(option)
+        option.selected = false
+        broadcastListsSelect.querySelector('option[value=""]').selected = true
+        
+        // remove row and remove list from addedLists
+        e.currentTarget.parentElement.remove()
+        addedLists = addedLists.filter(i => i != id)
+    }
+
+    function addListsOptions(lists){
+        lists.forEach(list => {
+            let option = document.createElement('option')
+            option.value = list.id
+            option.textContent = list.broadcast_list_name
+
+            options.push(option)
+
+            broadcastListsSelect.appendChild(option)
+        })
+    }
+
+
+    // Individuals list functionality
+    let addedEmails = []
+    const addPersonBtn = individualsListWrapper.element.querySelector('.add-person-btn')
+    const addPersonEmailInpt = individualsListWrapper.element.querySelector("#individuals-list")
+
+    addPersonBtn.addEventListener('click', () => {
+        if (!addPersonEmailInpt.value) {
+            appendAlert('Enter an  email', 'danger')
+        }
+        else if (!isValidEmail(addPersonEmailInpt.value)){
+            appendAlert('Enter a valid email.', 'danger')
+        } 
+        else if (isEmailInList(addPersonEmailInpt.value)) {
+            appendAlert('Email already added.', 'danger')
+        } 
+
+        else {
+            // check if a user exists with that email and add it to the list
+            fetch('/api/user-exists', {
+                method: "post",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({email: addPersonEmailInpt.value})
+            })
+            .then(res => {
+                if (!res.ok) {
+                    throw new Error('Network response was not ok.')
+                    appendAlert('Network problem. Try again later.')
+                }
+                return res.json()
+            })
+            .then(data => {
+                if (data.success){
+                    addPersonRow(data.user)
+                }
+                else if (data.status && data.status == 401) {
+                    window.location.reload()
+                }
+                else {
+                    appendAlert(data.message, 'danger')
+                }
+            })
+            .catch(err => console.log(err))
+
+        }
+    })
+
+    function addPersonRow(person) {
+        // add person email to addedEmails
+        addedEmails.push({id: person.id, email: person.email})
+
+        // clear email input
+        addPersonEmailInpt.value = ''
+
+        // create and add a new row
+        let row = document.createElement('div')
+        row.classList = ['d-flex gap-3 mt-3 pe-2']
+        row.id = person.id
+        
+        let p = document.createElement('p')
+        p.classList = ['list-name text-secondary']
+        p.textContent = person.email
+        row.appendChild(p)
+
+        let closeIcon = document.createElement('img')
+        closeIcon.setAttribute('src', '/static/assets/close.svg')
+        closeIcon.addEventListener('click', handlePersonRemoveIconClick, {once: true})
+        row.appendChild(closeIcon)
+
+        individualsListWrapper.element.querySelector('.rows-container').appendChild(row)
+    }
+
+    function handlePersonRemoveIconClick(e) {
+        let id = e.currentTarget.parentElement.id
+
+        // remove person from list
+        addedEmails = addedEmails.filter(obj => obj.id != id)
+        // remove row
+        e.currentTarget.parentElement.remove()
+    }
+
+    ////////// Helper Functions
+    function isValidEmail(email) {
+        const regex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+        return regex.test(email);
+    }
+
+    function isEmailInList(email) {
+        for (let i = 0; i < addedEmails.length; i++) {
+            if (email == addedEmails[i].email) {
+                return true
+            }
+        }
+        return false
+    }
+
+</script>
+
+<script>
+    
+    let lists = {{ lists|tojson }} 
+    addListsOptions(lists)
+
+</script>
+{% endblock %}

@@ -5,38 +5,415 @@
 
 {% block main %}
 
-    <ul class="nav nav-underline py-5 gx-5">
-        <li class="nav-item mx-3">
-            <a class="nav-link active" href="#invitations">Invitations</a>
-        </li>
-        <li class="nav-item mx-3">
-            <a class="nav-link" href="#my-events">My Events</a>
-        </li>
-        <li class="nav-item mx-3">
-            <a class="nav-link" href="#past-events">Past Event</a>
-        </li>
-    </ul>
+    <div class="nav-wrapper my-5 text-secondary">
+        <ul class="nav nav-underline">
+            <li class="nav-item">
+                <a class="nav-link active" href="#invitations">Invitations</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#my-events">My Events</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#past-events">Past Event</a>
+            </li>
+        </ul>
+
+        <a href="/create-event" class="btn btn-light btn-md d-flex align-items-center gap-2 fw-medium">
+            <svg width="1rem" height="1rem" viewBox="5 5 14 14" xmlns="http://www.w3.org/2000/svg" class="w-7 h-7 pointer-events-none"><path d="M18.361 11.259a.75.75 0 01-.009 1.484l-.102.007h-5.5v5.5a.75.75 0 01-1.491.111l-.009-.11V12.75h-5.5l-.111-.009a.75.75 0 01.009-1.484l.102-.007h5.5v-5.5a.75.75 0 011.491-.111l.009.11v5.501h5.5l.111.009z" fill="currentcolor" fill-rule="evenodd"></path></svg>
+            <p>New Event</p>
+        </a>
+    </div>
 
     
     <div class="d-flex flex-wrap gap-4 align-items-start" id="cards-container"></div>
 
+
+    <!-- View Details Modal -->
+    <div class="modal fade text-primary" id="event-details-modal" tabindex="-1"aria-hidden="true">
+        <div class="modal-dialog">
+    
+          <div class="modal-content bg-primary">
+    
+            <div class="modal-header p-4 pb-0" style="border: none">
+                <button type="button" class="btn-close" style="filter: invert(1);" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            
+            <div class="modal-body d-flex flex-column gap-3 p-4">
+                <div>
+                    <h1 class="fs-4 fw-semibold" id="event-title"></h1>
+                    <p class="opacity-70 fw-light pb-4" id="event-description" style="line-height: 1.3;"></p>
+                </div>
+                <div class="d-flex" >
+                    <span class="fw-light text-secondary" style="min-width: 7rem;">Created by: </span>
+                    <span class="opacity-70 fw-medium" id="event-creator"></span>
+                </div>
+                <div class="d-flex" >
+                    <span class="fw-light text-secondary" style="min-width: 7rem;">Location: </span>
+                    <span class="opacity-70 fw-medium" id="event-location"></span>
+                </div>
+                <div class="d-flex" >
+                    <span class="fw-light text-secondary" style="min-width: 7rem;">Duration: </span>
+                    <span class="opacity-70 fw-medium" id="event-duration"></span>
+                </div>
+                <div class="d-flex" >
+                    <span class="fw-light text-secondary" style="min-width: 7rem;">Date Range: </span>
+                    <span class="opacity-70 fw-medium" id="event-date-range"></span>
+                </div>
+                <div class="d-flex" >
+                    <span class="fw-light text-secondary" style="min-width: 7rem;">Privacy: </span>
+                    <span class="opacity-70 fw-medium" id="event-privacy"></span>
+                </div>
+                <div class="d-flex" >
+                    <span class="fw-light text-secondary" style="min-width: 7rem;">Deadline: </span>
+                    <span class="opacity-70 fw-medium" id="event-deadline"></span>
+                </div>
+              
+            </div>
+          </div>
+    
+        </div>
+    </div>
+
+    <!-- Decline Invitation Modal -->
+    <div class="modal fade modal-sm text-primary" id="decline-invitation-modal" tabindex="-1"aria-hidden="true">
+        <div class="modal-dialog">
+    
+          <div class="modal-content bg-primary">
+    
+            <div class="modal-header align-items-center " style="border: none;">
+              <p class="fs-4 fw-semibold">Decline Invitation?</p>
+              <button type="button" class="btn-close" style="filter: invert(1);" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+    
+            <div class="modal-body py-0">
+                <label class="fw-light opacity-70 mb-1 text-secondary">Type "DECLINE" to confirm.</label>
+                <input type="text" placeholder="DECLINE" style="text-transform: uppercase;" autocomplete="off" class="form-control input-danger" id="decline-invitation-input">
+            </div>
+    
+            <div class="modal-footer" style="border: none">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+              <button type="button" class="btn btn-danger disabled" id="decline-invitation-confirm-btn">Decline</button>
+            </div>
+          </div>
+    
+        </div>
+    </div>
+
+    <!-- Delete Event Modal -->
+    <div class="modal fade modal-sm text-primary" id="delete-event-modal" tabindex="-1"aria-hidden="true">
+        <div class="modal-dialog">
+    
+          <div class="modal-content bg-primary">
+    
+            <div class="modal-header align-items-center " style="border: none;">
+              <p class="fs-4 fw-semibold">Delete Event?</p>
+              <button type="button" class="btn-close" style="filter: invert(1);" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+    
+            <div class="modal-body py-0">
+                <label class="fw-light opacity-70 mb-1 text-secondary">Type "CONFIRM" to delete.</label>
+                <input type="text" placeholder="CONFIRM" style="text-transform: uppercase;" autocomplete="off" class="form-control input-danger" id="confirm-delete-input">
+            </div>
+    
+            <div class="modal-footer" style="border: none">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+              <button type="button" class="btn btn-danger disabled" id="delete-event-confirm-btn">Delete</button>
+            </div>
+          </div>
+    
+        </div>
+    </div>
+
+    <!-- Share Event Modal -->
+    <div class="modal fade text-secondary" id="share-event-modal" tabindex="-1"aria-hidden="true">
+        <div class="modal-dialog">
+    
+          <div class="modal-content bg-primary">
+    
+            <div class="modal-header align-items-start" style="border: none;">
+              <p class="fs-4 fw-semibold title-placeholder text-primary"></p>
+              <button type="button" class="btn-close" style="filter: invert(1);" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+    
+            <div class="modal-body py-0">
+                <p class="fw-light">To invite existing users and broadcast lists go to <a id="settings-link" style="text-decoration:underline;">Event Settings.</a></p>
+                <p class="fw-light opacity-70 mt-4" style="font-size: 0.8rem;">Event link: <span class="link-placeholder"></span></p>
+            </div>
+    
+            <div class="modal-footer" style="border: none">
+              <button type="button" class="btn btn-secondary btn-md" data-bs-dismiss="modal">Cancel</button>
+              <button type="button" class="btn btn-primary btn-md" id="share-event-confirm-btn">
+                <svg width="1.5rem" height="1.5rem" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 pointer-events-none"><path d="M7.928 8.99a4.007 4.007 0 015.521-.139l.145.138.708.709a1.002 1.002 0 01-1.329 1.494l-.087-.078-.708-.708a2.004 2.004 0 00-2.724-.102l-.11.102L5.59 14.16a2.004 2.004 0 00-.102 2.724l.102.11 1.417 1.416c.747.747 1.936.78 2.723.102l.11-.102 1.063-1.063a1.002 1.002 0 011.494 1.33l-.078.087-1.062 1.062a4.007 4.007 0 01-5.522.138l-.145-.138-1.416-1.416a4.007 4.007 0 01-.138-5.522l.138-.145L7.928 8.99zm4.815-4.816a4.007 4.007 0 015.522-.138l.145.138 1.416 1.416a4.007 4.007 0 01.138 5.522l-.138.145-3.754 3.754a4.007 4.007 0 01-5.521.138l-.145-.138-.708-.709a1.002 1.002 0 011.329-1.494l.087.078.708.708c.747.747 1.937.78 2.724.102l.11-.102L18.41 9.84c.747-.747.78-1.936.102-2.724l-.102-.11-1.417-1.416a2.004 2.004 0 00-2.723-.102l-.11.102-1.063 1.063a1.002 1.002 0 01-1.494-1.33l.078-.087 1.062-1.062z" fill="currentcolor" fill-rule="evenodd"></path></svg>
+                Copy Link
+            </button>
+            </div>
+          </div>
+    
+        </div>
+    </div>
 {% endblock %}
 
 
 {% block script %}
+<!-- Modal script -->
+<script>
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    /// View Details Modal
+    const eventDetailsModal = new bootstrap.Modal('#event-details-modal', {
+        keyboard: true,
+        focus: true,
+        backdrop: true
+    })
+   
+    function handleViewDetailsBtnClick(e) {
+        let btn = e.currentTarget
+        let cardId = btn.parentElement.parentElement.getAttribute('id')
+        console.log(cardId)
+
+        fetch(`/event/${cardId}`)
+        .then(res => {
+            if (!res.ok) {
+                appendAlert("Couldn't get event details", 'warning')
+                throw new Error('Network response was not ok.')
+            }
+            return res.json()
+        })
+        .then(data => {
+            if (data.success) {
+                openViewDetailsModal(data.details)
+            }
+            else if (data.status && data.status == 401) {
+                window.location.reload()
+            }
+            else {
+                appendAlert(data.message, 'danger')
+            }
+        })
+        .catch(err => console.log(err))
+    }
+
+    function openViewDetailsModal(event) {
+        let end_date = event.end_date.split('-')
+        end_date = [end_date[2], months[end_date[1] - 1], end_date[0]].join(' ')
+        let start_date = event.start_date.split('-')
+        start_date = [start_date[2], months[start_date[1] - 1], start_date[0]].join(' ')
+        let deadline = event.deadline.split('-')
+        deadline = [deadline[2], months[deadline[1] - 1], deadline[0]].join(' ')
+
+        let [hours, mins] = event.duration.split(':')
+        let duration = mins == '0' || mins == '00' ? `${hours} hrs` : `${hours} hrs ${mins} mins`
+
+        eventDetailsModal._element.querySelector('#event-title').textContent = event.title
+        eventDetailsModal._element.querySelector('#event-description').textContent = event.description
+        eventDetailsModal._element.querySelector('#event-creator').textContent = event.fullname
+        eventDetailsModal._element.querySelector('#event-location').textContent = event.location
+        eventDetailsModal._element.querySelector('#event-duration').textContent = duration
+        eventDetailsModal._element.querySelector('#event-date-range').innerHTML = start_date +  "<br style='display:none'>" + " -> " + end_date
+        eventDetailsModal._element.querySelector('#event-privacy').textContent = event.privacy
+        eventDetailsModal._element.querySelector('#event-deadline').textContent = deadline
+
+        eventDetailsModal.show()
+    }
+
+
+    // Decline Invitation Modal
+    const declineInvitationModal = new bootstrap.Modal('#decline-invitation-modal', {
+        keyboard: true,
+        focus: true,
+        backdrop: false
+    })
+    const declineInvitationConfirmBtn = declineInvitationModal._element.querySelector('#decline-invitation-confirm-btn')
+    const declineInvitationInput = declineInvitationModal._element.querySelector('#decline-invitation-input')
+
+    
+    function handleDeclineBtnClick(e){
+        let btn = e.currentTarget
+        let eventId = btn.parentElement.parentElement.getAttribute('id')
+        
+        declineInvitationInput.value = ''
+        declineInvitationModal._element.setAttribute('eventId', eventId)
+        declineInvitationModal.show()
+    }
+
+    declineInvitationInput.addEventListener('input', () => {
+        if (declineInvitationInput.value.toUpperCase() == 'DECLINE') {
+            declineInvitationConfirmBtn.classList.remove('disabled')
+        }
+        else {
+            declineInvitationConfirmBtn.classList.add('disabled')
+        }
+    })
+
+    declineInvitationConfirmBtn.addEventListener('click', (e) => {
+        
+
+        if (declineInvitationInput.value.toUpperCase() == 'DECLINE') {
+            declineInvitationConfirmBtn.classList.remove('disabled')
+               
+            let event_id = e.currentTarget.parentElement.parentElement.parentElement.parentElement.getAttribute('eventId')
+            fetch(`/decline-invitation/${event_id}`, {method: "patch"})
+            .then(res => {
+                if (!res.ok) {
+                    appendAlert('Network response error. Try again later', 'warning')
+                    throw new Error('Network response was not ok')
+                }
+                return res.json()
+            })
+            .then(data => {
+                if (data.success) {
+                    appendAlert('Invitation declined successfully.', 'success')
+                    window.location.reload()
+                }
+                else if (data.status && data.status == 401) {
+                    window.location.reload()
+                }
+                else {
+                    appendAlert(data.message, 'danger')
+                }
+            })
+            .catch(err => console.log(err))
+        }
+        else {
+            deleteEventConfirmBtn.classList.add('disabled')
+        }
+    })
+
+
+    // Delete Event Modal
+    const deleteEventModal = new bootstrap.Modal("#delete-event-modal", {
+        keyboard: true,
+        focus: true,
+        backdrop: false
+    })
+    const deleteEventConfirmBtn = deleteEventModal._element.querySelector('#delete-event-confirm-btn')
+    const deleteEventConfirmInput = deleteEventModal._element.querySelector('#confirm-delete-input')
+
+    function handleDeleteBtnClick(e) {
+        let btn = e.currentTarget
+        let eventId = btn.parentElement.parentElement.parentElement.parentElement.parentElement.id
+        
+        deleteEventConfirmInput.value = ''
+        deleteEventModal._element.setAttribute('eventId', eventId)
+        deleteEventModal.show()
+    }
+    
+    deleteEventConfirmInput.addEventListener('input', () => {
+        if (deleteEventConfirmInput.value.toUpperCase() == 'CONFIRM') {
+            deleteEventConfirmBtn.classList.remove('disabled')
+        }
+        else {
+            deleteEventConfirmBtn.classList.add('disabled')
+        }
+    })
+
+    deleteEventConfirmBtn.addEventListener('click', () => {
+        if (deleteEventConfirmInput.value.toUpperCase() == 'CONFIRM') {
+            deleteEventConfirmBtn.classList.remove('disabled')
+               
+            let event_id = deleteEventModal._element.getAttribute('eventId')
+            fetch(`/event/${event_id}`, {method: "delete"})
+            .then(res => {
+                if (!res.ok) {
+                    appendAlert('Network response error. Try again later', 'warning')
+                    throw new Error('Network response was not ok')
+                }
+                return res.json()
+            })
+            .then(data => {
+                if (data.success) {
+                    appendAlert('Event deleted successfully', 'success')
+                    window.location.reload()
+                }
+                else if (data.status && data.status == 401) {
+                    window.location.reload()
+                }
+                else {
+                    appendAlert(data.message, 'danger')
+                    deleteEventModal.hide()
+                }
+            })
+            .catch(err => console.log(err))
+        }
+        else {
+            deleteEventConfirmBtn.classList.add('disabled')
+        }
+    })
+
+
+    // share Event Modal
+    const shareEventModal = new bootstrap.Modal("#share-event-modal", {
+        keyboard: true,
+        focus: true,
+        backdrop: false
+    })
+    const shareEventConfirmBtn = shareEventModal._element.querySelector('#share-event-confirm-btn')
+    const eventTitlePlaceholder = shareEventModal._element.querySelector('.title-placeholder')
+    const eventLinkPlaceholder = shareEventModal._element.querySelector('.link-placeholder')
+    const settingsLink = shareEventModal._element.querySelector('#settings-link')
+
+    function handleShareBtnClick(e) {
+        let btn = e.currentTarget
+        let eventhash = btn.getAttribute('data-event-hash')
+        let eventTitle = btn.parentElement.parentElement.parentElement.parentElement.parentElement.querySelector(".card-title").textContent
+        
+        settingsLink.setAttribute('href', `/settings/${eventhash}`)
+        eventLinkPlaceholder.textContent = `http://127.0.0.1:8000/events/${eventhash}`
+        eventTitlePlaceholder.textContent = eventTitle
+        shareEventModal.show()
+    }
+
+    shareEventConfirmBtn.addEventListener('click', () => {
+        const text = eventLinkPlaceholder.innerText;
+
+        // Modern approach using the Clipboard API
+        if (window.navigator.clipboard) {
+            return window.navigator.clipboard.writeText(text)
+                .then(() => {
+                    appendAlert('Link copied to clipboard!', 'success');
+                })
+                .catch(err => {
+                    appendAlert('Could not copy link :(', 'danger');
+                });
+
+        } else {
+            // Fallback for older browsers
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            
+            // Ensure the textarea is not visible
+            textArea.style.position = 'fixed';  // Prevent scrolling to bottom of page in Microsoft Edge
+            textArea.style.opacity = '0';       // Hide the textarea
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            textArea.setSelectionRange(0,99999);
+            
+            try {
+                const successful = document.execCommand('copy'); // Copy the text
+                if (successful) {
+                    appendAlert('Link copied to clipboard!', 'success');
+                } else {
+                    appendAlert('Could not copy link :(', 'danger');
+                }
+            } catch (err) {
+                appendAlert('Could not copy link :(', 'danger');
+            }
+    
+            // Cleanup: Remove the temporary textarea
+            document.body.removeChild(textArea);
+        }
+
+        
+    })
+
+</script>
+<!-- Page - Cards - Tabs script -->
 <script>
     const cardsContainer = document.getElementById("cards-container")
     const tabs = document.querySelectorAll(".nav .nav-link")
 
     window.addEventListener('hashchange', () => {
         handleChange(window.location.hash.split('#')[1])
-    })
-
-    tabs.forEach(tab => {
-        tab.addEventListener('click', (e) => {
-            e.preventDefault()
-            handleChange(tab.getAttribute('href').split('#')[1])
-        })
     })
 
     function handleChange(page) {
@@ -51,17 +428,30 @@
         tabs[pages.indexOf(page)].classList.add('active')
         
         // fetch and display cards
-        fetch(`/api/${page}`)
+        fetch(`/events/${page}`)
         .then(res => {
             if (!res.ok) {throw new Error("Network response was not ok.")}
             return res.json()
         })
-        .then(data => { renderCards(data, page) })
+        .then(data => { 
+            if (data.success) {
+                renderCards(data.events, page) 
+            }
+            else if (data.status && data.status == 401) {
+                window.location.reload()
+            }
+            else {
+                appendAlert(data.message)
+            }
+        })
         .catch(err => console.log(err))
     }
 
     function renderCards(data, page) {
-        cardsContainer.querySelectorAll('.card').forEach(card => card.remove())
+        cardsContainer.querySelectorAll('.card .btn-view-details').forEach(btn => btn?.removeEventListener('click', handleViewDetailsBtnClick))
+        cardsContainer.querySelectorAll('.card .btn-decline-invitation').forEach(btn => btn?.removeEventListener('click', handleDeclineBtnClick))
+        cardsContainer.querySelectorAll('.card .card-header .btn-delete-event').forEach(btn => btn?.removeEventListener('click', handleDeleteBtnClick))
+        cardsContainer.innerHTML = ''
 
         data.forEach(card => {
             let c = createCard(card, page)
@@ -70,95 +460,275 @@
     }
 
     function createCard(data, page){
-        let {name, creator, deadline, privacy} = data
 
-        // Card
-        let card = document.createElement('div')
-        card.classList = ['card card-index bg-secondary border-primary text-light']
+        if (page == 'my-events') {
+            let {id, hashed_id, title, privacy, end_date} = data
 
-        // Card Header
-        let header = document.createElement('div')
-        header.classList = ['card-header d-flex justify-content-between align-items-center pt-3']
-        
-        let img = document.createElement('img')
-        img.setAttribute('src', privacy == 'private' ? './static/assets/lock.svg' : './static/assets/unlocked.png')
-        
-        let date = document.createElement('p')
-        date.textContent = deadline
-        
-        if (page == 'my-events'){
+            // card 
+            let card = document.createElement('div')
+            card.setAttribute('id', id)
+            card.classList = ['card card-index bg-secondary border-primary text-secondary']
 
+            // Card Header
+            let header = document.createElement('div')
+            header.classList = ['card-header d-flex justify-content-between align-items-center pt-3']
+            
+            let lockIcon = document.createElement('img')
+            lockIcon.setAttribute('src', privacy == 'private' ? './static/assets/lock-icon.svg' : './static/assets/eye-icon.svg')
+            lockIcon.setAttribute('data-bs-title', privacy == 'private' ? 'Private Event' : 'Public Event')
+            lockIcon.setAttribute('data-bs-toggle', 'tooltip')
+            lockIcon.setAttribute('data-bs-custom-class', "custom-tooltip")
+            new bootstrap.Tooltip(lockIcon)
+            header.appendChild(lockIcon)
+
+
+            let dropdownWrapper = document.createElement('div')
+            dropdownWrapper.classList = ['dropdown']
+            dropdownWrapper.innerHTML = `
+            <a href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <img class='dots-icon' src="./static/assets/dots-icon.svg">
+            </a>
+            <ul class="dropdown-menu text-secondary">
+                <li><a class="dropdown-item d-flex align-items-center gap-1" href="/submissions/${hashed_id}">
+                    <svg width="1.5rem" height="1.5rem" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M15.24 2H8.76004C5.00004 2 4.71004 5.38 6.74004 7.22L17.26 16.78C19.29 18.62 19 22 15.24 22H8.76004C5.00004 22 4.71004 18.62 6.74004 16.78L17.26 7.22C19.29 5.38 19 2 15.24 2Z" stroke="currentcolor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    Submissions
+                </a></li>
+
+                <li><p class="dropdown-item btn-share-event d-flex align-items-center gap-2" data-event-hash="${hashed_id}">
+                    <svg width="1.5rem" height="1.5rem" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 pointer-events-none mr-2 text-2xl"><path fill-rule="evenodd" clip-rule="evenodd" d="M14.302 3.805a2.75 2.75 0 10-3.89 3.89L11.5 8.78h-1.142a7.367 7.367 0 00-7.078 5.323l-1.233 4.271c-.315 1.09 1.068 1.849 1.818.999l2.287-2.59a5.25 5.25 0 013.935-1.775h1.422l-1.095 1.095a2.75 2.75 0 103.889 3.889l6.149-6.15a2.75 2.75 0 000-3.889l-6.15-6.149zm-.473 9.92a.75.75 0 01.012 1.073l-2.367 2.366a1.25 1.25 0 101.767 1.768l6.15-6.15a1.25 1.25 0 000-1.767l-6.15-6.149a1.25 1.25 0 10-1.768 1.768L13.74 8.9a.75.75 0 01-.396 1.38.753.753 0 01-.065 0h-2.922a5.867 5.867 0 00-5.637 4.24l-.694 2.403 1-1.133a6.75 6.75 0 015.06-2.283h3.216c.205 0 .391.083.527.216z" fill="currentcolor"></path></svg>
+                    Share
+                </p></li>
+
+                <li><a class="dropdown-item d-flex align-items-center gap-2" href="/settings/${hashed_id}">
+                    <svg width="1.5rem" height="1.5rem" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" class="w-7 h-7 pointer-events-none !h-6 !w-6 text-base -ml-2 mr-1"><path d="M12 3a3 3 0 012.758 1.817l.067.171.035.106.04-.02a3.004 3.004 0 013.151.29l.169.137.144.135a3.001 3.001 0 01.645 3.284l-.082.18-.023.039.108.036a3.003 3.003 0 011.964 2.446l.019.203L21 12a3 3 0 01-1.817 2.758l-.171.067-.107.035.021.04a3.004 3.004 0 01-.29 3.151l-.137.169-.135.144a3.001 3.001 0 01-3.284.645l-.18-.082-.04-.023-.035.108a3.003 3.003 0 01-2.446 1.964l-.203.019L12 21a3 3 0 01-2.758-1.817l-.067-.172-.036-.106-.039.021a3.004 3.004 0 01-3.151-.29L5.78 18.5l-.144-.135a3.001 3.001 0 01-.645-3.284l.082-.18.022-.04-.107-.035a3.003 3.003 0 01-1.964-2.446l-.019-.203L3 12a3 3 0 011.817-2.758l.172-.067.105-.036-.02-.039a3.004 3.004 0 01.29-3.151L5.5 5.78l.135-.144a3.001 3.001 0 013.284-.645l.18.082.039.022.036-.107a3.003 3.003 0 012.446-1.964l.203-.019L12 3zm0 1.5a1.5 1.5 0 00-1.493 1.356L10.5 6v1.229c-.188.059-.371.129-.55.209l-.262.127-.87-.868a1.5 1.5 0 00-2.224 2.007l.103.114.868.87c-.09.172-.17.35-.24.534l-.096.279L6 10.5a1.5 1.5 0 00-.144 2.993L6 13.5h1.229c.06.188.129.372.209.55l.127.262-.868.87a1.5 1.5 0 001.06 2.56l.144-.006c.287-.028.567-.138.803-.33l.114-.103.87-.868c.172.09.35.17.534.24l.279.096L10.5 18a1.5 1.5 0 001.356 1.493L12 19.5l.144-.007a1.5 1.5 0 001.35-1.349L13.5 18v-1.229c.188-.06.372-.129.55-.209l.262-.127.87.868c.293.293.677.44 1.06.44l.144-.007a1.5 1.5 0 001.02-2.44l-.103-.114-.868-.87c.09-.172.17-.35.24-.533l.096-.279H18l.144-.007a1.5 1.5 0 000-2.986L18 10.5h-1.229a4.964 4.964 0 00-.209-.55l-.127-.262.868-.87a1.5 1.5 0 00-2.007-2.224l-.114.103-.87.868c-.172-.09-.35-.17-.533-.24L13.5 7.23V6A1.5 1.5 0 0012 4.5zM12 9a3 3 0 110 6 3 3 0 010-6zm0 1.5a1.5 1.5 0 100 3 1.5 1.5 0 000-3z" fill="currentcolor" fill-rule="evenodd"></path></svg>
+                    Settings
+                </a></li>
+
+                <li><p class="dropdown-item btn-delete-event d-flex align-items-center gap-2" style="color:red">
+                    <svg width="1.5rem" height="1.5rem" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 pointer-events-none mr-2"><path d="M15.758 8a3 3 0 012.985 3.297l-.018.148-1.05 7a3 3 0 01-2.79 2.55l-.177.005H9.292a3 3 0 01-2.936-2.38l-.031-.175-1.05-7a3 3 0 012.818-3.441L8.242 8h7.516zm0 1.5H8.242a1.5 1.5 0 00-1.498 1.579l.014.144 1.05 7a1.5 1.5 0 001.346 1.27l.138.007h5.416a1.5 1.5 0 001.457-1.142l.027-.135 1.05-7a1.5 1.5 0 00-1.34-1.716l-.144-.007zM10.25 12a.75.75 0 01.75.75v3.5a.75.75 0 11-1.5 0v-3.5a.75.75 0 01.75-.75zm3.5 0a.75.75 0 01.75.75v3.5a.75.75 0 11-1.5 0v-3.5a.75.75 0 01.75-.75zM12 3a1.5 1.5 0 011.493 1.356l.007.144h5.75a.75.75 0 110 1.5H4.75a.75.75 0 010-1.5l5.75-.001A1.5 1.5 0 0112 3z" fill="currentcolor" fill-rule="evenodd"></path></svg>
+                    Delete
+                </p></li>
+            </ul>
+            `
+
+            dropdownWrapper.querySelector('.btn-delete-event').addEventListener('click', handleDeleteBtnClick)
+            
+            dropdownWrapper.querySelector('.btn-share-event').addEventListener('click', handleShareBtnClick)
+            
+            header.appendChild(dropdownWrapper)
+            
+            
+            
+            // Card Body
+            let cBody = document.createElement('div')
+            cBody.classList = ['card-body text-secondary pb-2 pt-0']
+            
+            let titleHeading = document.createElement('h4')
+            titleHeading.classList.add('card-title')
+            titleHeading.textContent = title
+            cBody.appendChild(titleHeading)
+            
             let wrapper = document.createElement('div')
-            wrapper.classList = ['d-flex align-items-end gap-2']
-            wrapper.appendChild(img)
+            wrapper.classList = ['d-flex justify-content-between align-items-center']
+
+            let text = document.createElement('p')
+            text.classList.add('card-text')
+            text.textContent = "Created by me" 
+            wrapper.appendChild(text)
+            
+            let date = document.createElement('p')
+            end_date = end_date.split('-')
+            end_date = [end_date[2], months[end_date[1] - 1], end_date[0]].join(' ')
+            date.innerHTML = `<span class="fw-light" style="font-size:12px">ends:</span> ${end_date}`
+            date.style.fontSize = '14px'
+            date.classList = ['fw-light opacity-50'] 
             wrapper.appendChild(date)
-            header.append(wrapper)
+            
+            cBody.appendChild(wrapper)
+            
+            
+            //Card Footer
+            let footer = document.createElement('div')
+            footer.classList = ['card-footer d-flex justify-content-between text-dark pb-3']
+            
+            let edit = document.createElement('a')
+            edit.classList = ['btn btn-primary btn-sm']
+            edit.textContent = 'Change Availability'
+            edit.setAttribute('href', `/change-availability/${hashed_id}`)
+            footer.appendChild(edit)
+            
+            let details = document.createElement('a')
+            details.classList = ['btn btn-secondary btn-sm btn-view-details']
+            details.textContent = 'View Details'
+            details.addEventListener('click', handleViewDetailsBtnClick)
+            footer.appendChild(details)
+            
+            
+            card.appendChild(header)
+            card.appendChild(cBody)
+            card.appendChild(footer)
 
-            let link = document.createElement('a')
-            link.setAttribute('href', '#')
-            let gear = document.createElement('img')
-            gear.setAttribute('src', './static/assets/gear.svg')
-            link.appendChild(gear)
-            header.appendChild(link)
+            return card
+            
+        }
 
-        }else{
+        else if (page == 'past-events') {
+            let {id, title, privacy, deadline, end_date, fullname} = data
 
+            // Card
+            let card = document.createElement('div')
+            card.setAttribute('id', id)
+            card.classList = ['card card-index bg-secondary border-primary text-secondary']
+
+            // Card Header
+            let header = document.createElement('div')
+            header.classList = ['card-header d-flex justify-content-between align-items-center pt-3']
+
+            let img = document.createElement('img')
+            img.setAttribute('src', privacy == 'private' ? './static/assets/lock-icon.svg' : './static/assets/eye-icon.svg')
+            img.setAttribute('data-bs-title', privacy == 'private' ? 'Private Event' : 'Public Event')
+            img.setAttribute('data-bs-toggle', 'tooltip')
+            img.setAttribute('data-bs-custom-class', "custom-tooltip")
+            new bootstrap.Tooltip(img)
+            header.appendChild(img)
+
+            let date = document.createElement('p')
+            if (deadline) {
+                deadline = deadline.split('-')
+                deadline = [deadline[2], months[deadline[1] - 1], deadline[0]].join(' ')
+                date.innerHTML = `<span class="fw-light" style="font-size:12px">deadline:</span><br> ${deadline}`
+            }
+            if (end_date) {
+                end_date = end_date.split('-')
+                end_date = [end_date[2], months[end_date[1] - 1], end_date[0]].join(' ')
+                date.innerHTML = `<span class="fw-light" style="font-size:12px">ended:</span> ${end_date}`
+            }
+            header.appendChild(date)
+
+            // Card Body
+            let cBody = document.createElement('div')
+            cBody.classList = ['card-body text-secondary py-2']
+            
+            let titleHeading = document.createElement('h4')
+            titleHeading.classList.add('card-title')
+            titleHeading.textContent = title
+            cBody.appendChild(titleHeading)
+            
+            let text = document.createElement('p')
+            text.classList.add('card-text')
+            if (fullname == undefined) text.textContent = 'Create by me'
+            else text.textContent = `Create by: ${fullname}`
+            cBody.appendChild(text)
+
+
+            //Card Footer
+            let footer = document.createElement('div')
+            footer.classList = ['card-footer d-flex justify-content-between text-dark pb-3']
+
+            let details = document.createElement('a')
+            details.classList = ['btn btn-secondary btn-sm btn-view-details']
+            details.textContent = 'View Details'
+            details.addEventListener('click', handleViewDetailsBtnClick)
+            footer.appendChild(details)
+
+
+            card.appendChild(header)
+            card.appendChild(cBody)
+            card.appendChild(footer)
+
+            return card
+            
+        }
+
+        else if (page == 'invitations') {
+            let {id, hashed_id, title, fullname, deadline, privacy, invitation_status} = data
+            
+            // Card
+            let card = document.createElement('div')
+            card.setAttribute('id', (id))
+            card.classList = ['card card-index bg-secondary border-primary text-secondary']
+
+            // Card Header
+            let header = document.createElement('div')
+            header.classList = ['card-header d-flex justify-content-between align-items-center pt-3']
+            
+            let img = document.createElement('img')
+            img.setAttribute('src', privacy == 'private' ? './static/assets/lock-icon.svg' : './static/assets/eye-icon.svg')
+            img.setAttribute('data-bs-title', privacy == 'private' ? 'Private Event' : 'Public Event')
+            img.setAttribute('data-bs-toggle', 'tooltip')
+            img.setAttribute('data-bs-custom-class', "custom-tooltip")
+            new bootstrap.Tooltip(img)
+    
+            let date = document.createElement('p')
+            deadline = deadline.split('-')
+            deadline = [deadline[2], months[deadline[1] - 1], deadline[0]].join(' ')
+            date.innerHTML = `<span class="fw-light" style="font-size:12px">deadline:</span><br> ${deadline}`
+            
             header.appendChild(img)
             header.appendChild(date)
 
-        }
-        // Card Body
-        let cBody = document.createElement('div')
-        cBody.classList = ['card-body text-light py-2']
-        
-        let title = document.createElement('h4')
-        title.classList.add('card-title')
-        title.textContent = name
-        cBody.appendChild(title)
-        
-        let text = document.createElement('p')
-        text.classList.add('card-text')
-        text.textContent = `Created by: ${creator}`
-        cBody.appendChild(text)
-        
-        //Card Footer
-        let footer = document.createElement('div')
-        footer.classList = ['card-footer d-flex justify-content-between text-dark pb-3']
-        
-        if (page == 'invitations' && data.invitation_status == 'pending'){
+
+            // Card Body
+            let cBody = document.createElement('div')
+            cBody.classList = ['card-body text-secondary py-2']
             
-            let accept = document.createElement('a')
-            accept.classList = ['btn btn-success btn-sm']
-            accept.textContent = 'Accept'
-            footer.appendChild(accept)
+            let titleHeading = document.createElement('h4')
+            titleHeading.classList.add('card-title')
+            titleHeading.textContent = title
+            cBody.appendChild(titleHeading)
             
-            let decline = document.createElement('a')
-            decline.classList = ['btn btn-danger btn-sm']
-            decline.textContent = 'Decline'
-            footer.appendChild(decline)
+            let text = document.createElement('p')
+            text.classList.add('card-text')
+            text.textContent = `Created by: ${fullname}`
+            cBody.appendChild(text)
+
+            //Card Footer
+            let footer = document.createElement('div')
+            footer.classList = ['card-footer d-flex justify-content-between text-dark pb-3']
+            
+            if (invitation_status == 'pending'){
+                
+                let accept = document.createElement('a')
+                accept.classList = ['btn btn-success btn-sm']
+                accept.textContent = 'Accept'
+                accept.setAttribute('href', '/events/' + hashed_id)
+                footer.appendChild(accept)
+                
+                let decline = document.createElement('a')
+                decline.classList = ['btn btn-danger btn-sm btn-decline-invitation']
+                decline.textContent = 'Decline'
+                decline.addEventListener('click', handleDeclineBtnClick)
+                footer.appendChild(decline)
+    
+            }
+            else if (invitation_status == 'accepted') {
+                let edit = document.createElement('a')
+                edit.classList = ['btn btn-primary btn-sm']
+                edit.textContent = 'Change Availability'
+                edit.setAttribute('href', '/change-availability/' + hashed_id)
+                footer.appendChild(edit)
+            }
+            
+            let details = document.createElement('a')
+            details.classList = ['btn btn-secondary btn-sm btn-view-details']
+            details.textContent = 'View Details'
+            details.addEventListener('click', handleViewDetailsBtnClick)
+            footer.appendChild(details)
+    
+    
+            card.appendChild(header)
+            card.appendChild(cBody)
+            card.appendChild(footer)
+    
+            return card
 
         }
-        else if ((page == 'invitations' && data.invitation_status == 'accepted') || page == 'my-events') {
-            let edit = document.createElement('a')
-            edit.classList = ['btn btn-light btn-sm']
-            edit.textContent = 'Change Availability'
-            footer.appendChild(edit)
-        }
-        
-        let details = document.createElement('a')
-        details.classList = ['btn btn-secondary btn-sm']
-        details.textContent = 'View Details'
-        footer.appendChild(details)
 
-
-        card.appendChild(header)
-        card.appendChild(cBody)
-        card.appendChild(footer)
-
-        return card
     }
 
-    
+
     handleChange(window.location.hash.split('#')[1])
 </script>
 {% endblock %}
