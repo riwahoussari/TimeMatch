@@ -117,7 +117,7 @@ def get_user_by_google_id(google_id):
 def save_user_to_database(google_id, name, email):
     new_id = db.execute(
         "INSERT INTO users (fullname, email, google_id, default_availability) VALUES(?, ?, ?, ?)",
-        name, email, google_id, default_availability
+        name, email.lower() , google_id, default_availability
     )
     return new_id
 
@@ -138,7 +138,7 @@ def login():
 
         # Query database for username
         rows = db.execute(
-            "SELECT * FROM users WHERE email = ?", request.form.get("email")
+            "SELECT * FROM users WHERE email = ?", request.form.get("email").lower()
         )
 
         # Ensure username exists 
@@ -193,7 +193,7 @@ def register():
             new_id = db.execute(
                 "INSERT INTO users (fullname, email, hash, default_availability) VALUES(?, ?, ?, ?)",
                 data['fullname'], 
-                data["email"], 
+                data["email"].lower(), 
                 generate_password_hash(data["password"]),
                 default_availability
             )
@@ -1438,7 +1438,7 @@ def userExists():
     if not "email" in req:
         return jsonify({'success': False, "message": "No email provided.", "status": 400})
 
-    user = db.execute('SELECT id, fullname, email FROM users WHERE email == ? ', req["email"])
+    user = db.execute('SELECT id, fullname, email FROM users WHERE email == ? ', req["email"].lower())
 
     if len(user) <= 0 :
         return jsonify({'success': False, "message": "User not found", "status": 404})
