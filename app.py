@@ -1,5 +1,5 @@
 from cs50 import SQL
-from flask import Flask, redirect, render_template, request, session, jsonify, url_for
+from flask import Flask, redirect, render_template, request, session, jsonify, url_for, send_from_directory
 from flask_session import Session
 from werkzeug.security import check_password_hash, generate_password_hash
 from datetime import timedelta
@@ -8,6 +8,7 @@ import os
 from authlib.integrations.flask_client import OAuth, OAuthError
 from helpers import login_required, dateHasPassed, validateNewEventInfo, generate_unique_event_id, getListName, getListContacts, validateUpdateEventInfo, isValidAvailability, isValidFullAvailability, stripIndexesFromIntervals, is_valid_email
 from dotenv import load_dotenv
+import pymysql
 
 load_dotenv()
 
@@ -26,26 +27,77 @@ app.secret_key = os.getenv('SECRET_KEY')
 app.config["SESSION_TYPE"] = "filesystem"
 app.config["SESSION_FILE_DIR"] = os.path.join(app.instance_path, 'flask_session')
 app.config["SESSION_PERMANENT"] = True
-app.config["SESSION_USE_SIGNER"] = True  # Sign the session ID
+app.config["SESSION_USE_SIGNER"] = True  
 app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=30)
-app.config['HOST'] = os.getenv('HOST')
-app.config['PORT'] = os.getenv('PORT')
-app.config['DEBUG'] = True
+app.config['HOST'] = os.getenv('APP_HOST')
+app.config['PORT'] = os.getenv('APP_PORT')
+app.config['DEBUG'] = os.getenv('APP_DEBUG') == 'True'
 
 Session(app)
 
-# no caching
-@app.after_request
-def after_request(response):
-    """Ensure responses aren't cached"""
-    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
-    response.headers["Expires"] = 0
-    response.headers["Pragma"] = "no-cache"
+# caching
+@app.route('/static/<path:filename>')
+def custom_static(filename):
+    response = send_from_directory('static', filename)
+    # Cache for 1 year
+    response.headers["Cache-Control"] = "public, max-age=31536000"
     return response
 
 
-# Configure CS50 Library to use SQLite database
-db = SQL(os.getenv('DB_URL'))
+@app.after_request
+def after_request(response):
+    """Ensure responses aren't cached"""
+    cacheable_content_types = [
+        'text/css', 
+        'image/jpeg', 
+        'image/png', 
+        'image/gif', 
+        'image/svg+xml', 
+        'application/javascript', 
+        'application/json'
+    ]
+
+    if response.content_type not in cacheable_content_types:
+        response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+        response.headers["Expires"] = 0
+        response.headers["Pragma"] = "no-cache"
+
+    return response
+
+
+# Set up database 
+def db_execute(query, tuple=(), commit=False):
+    timeout = 10
+    connection = pymysql.connect(
+        charset="utf8mb4",
+        connect_timeout=timeout,
+        cursorclass=pymysql.cursors.DictCursor,
+        db=os.getenv('DB_NAME'),
+        host=os.getenv('DB_HOST'),
+        password=os.getenv('DB_PASSWORD'),
+        read_timeout=timeout,
+        port=int(os.getenv('DB_PORT')),
+        user=os.getenv('DB_USER'),
+        write_timeout=timeout,
+    )
+
+
+    try: 
+        cursor = connection.cursor()
+
+
+        if len(tuple):
+            cursor.execute(query, tuple)
+        else:
+            cursor.execute(query)
+
+        return cursor.fetchall()
+
+    finally:
+        if commit:
+            connection.commit()
+
+        connection.close()
 
 
 
@@ -105,7 +157,7 @@ def authorize():
 
 
 def get_user_by_google_id(google_id):
-    user = db.execute('SELECT id FROM users WHERE google_id = ?', google_id)
+    user = db_execute('SELECT id FROM users WHERE google_id = %s', (google_id,))
     if len(user) > 0:
         user_id = user[0]['id']
     else :
@@ -115,10 +167,14 @@ def get_user_by_google_id(google_id):
 
 
 def save_user_to_database(google_id, name, email):
-    new_id = db.execute(
-        "INSERT INTO users (fullname, email, google_id, default_availability) VALUES(?, ?, ?, ?)",
-        name, email.lower() , google_id, default_availability
+    db_execute(
+        "INSERT INTO users (fullname, email, google_id, default_availability) VALUES(%s, %s, %s, %s)",
+        (name, email.lower() , google_id, default_availability),
+        True
     )
+    new_id = db_execute("SELECT id FROM users WHERE email = %s AND google_id = %s", (email.lower(), google_id))
+    if len(new_id):
+        new_id = new_id[0]['id']
     return new_id
 
 
@@ -137,9 +193,7 @@ def login():
             return render_template('login.html', message="Please enter a password.")
 
         # Query database for username
-        rows = db.execute(
-            "SELECT * FROM users WHERE email = ?", request.form.get("email").lower()
-        )
+        rows = db_execute( "SELECT * FROM users WHERE email = %s", (request.form.get("email").lower(),))
 
         # Ensure username exists 
         if len(rows) < 1:
@@ -190,13 +244,17 @@ def register():
 
         # Register user and make sure username is not already taken
         try:
-            new_id = db.execute(
-                "INSERT INTO users (fullname, email, hash, default_availability) VALUES(?, ?, ?, ?)",
-                data['fullname'], 
+            db_execute(
+                "INSERT INTO users (fullname, email, hash, default_availability) VALUES(%s, %s, %s, %s)",
+                (data['fullname'], 
                 data["email"].lower(), 
                 generate_password_hash(data["password"]),
-                default_availability
+                default_availability),
+                True
             )
+            new_id = db_execute('SELECT id FROM users WHERE email = %s', (data['email'].lower(),))
+            if len(new_id): new_id = new_id[0]['id']
+
         except ValueError:
             return render_template("register.html", message="This email has already been used, please try a different one.")
 
@@ -227,7 +285,7 @@ def index():
 @app.route('/events/invitations')
 def invitation():
     user_id = session.get("user_id")
-    if user_id is None:
+    if user_id is None or user_id == []:
         return jsonify({"success": False, "message": "User unauthorized", "status": 401})
 
     query = """
@@ -236,10 +294,11 @@ def invitation():
     FROM event_users
     JOIN events ON event_users.event_id = events.id
     JOIN users ON events.creator_id = users.id
-    WHERE event_users.user_id = ? AND event_users.user_type = 'invitee' AND event_users.invitation_status IN ('pending', 'accepted');
+    WHERE event_users.user_id = %s AND event_users.user_type = 'invitee' AND event_users.invitation_status IN ('pending', 'accepted');
     """
 
-    data = db.execute(query, user_id)
+
+    data = db_execute(query, (user_id,))
     data = [
         {**event, 'id': event.pop('event_id')} 
         for event in data 
@@ -252,12 +311,12 @@ def invitation():
 @app.route('/events/my-events')
 def myEvents():
     user_id = session.get("user_id")
-    if user_id is None:
+    if user_id is None or user_id == []:
         return jsonify({"success": False, "message": "User unauthorized", "status": 401})
 
-    query = "SELECT id, hashed_id, title, end_date, privacy FROM events WHERE creator_id = ?"
+    query = "SELECT id, hashed_id, title, end_date, privacy FROM events WHERE creator_id = %s"
 
-    data = db.execute(query, user_id)
+    data = db_execute(query, (user_id,))
 
     data = [event for event in data if not dateHasPassed(event['end_date'])]
 
@@ -267,13 +326,13 @@ def myEvents():
 @app.route('/events/past-events')
 def pastEvents():
     user_id = session.get("user_id")
-    if user_id is None:
+    if user_id is None or user_id == []:
         return jsonify({"success": False, "message": "User unauthorized", "status": 401})
     
 
     ## created by me
-    query1 = "SELECT id, title, end_date, privacy FROM events WHERE creator_id = ?"
-    data1 = db.execute(query1, user_id)
+    query1 = "SELECT id, title, end_date, privacy FROM events WHERE creator_id = %s"
+    data1 = db_execute(query1, (user_id,))
     data1 = [event for event in data1 if dateHasPassed(event['end_date'])]
 
 
@@ -284,9 +343,9 @@ def pastEvents():
     FROM event_users
     JOIN events ON event_users.event_id = events.id
     JOIN users ON events.creator_id = users.id
-    WHERE event_users.user_id = ? AND event_users.user_type = 'invitee';
+    WHERE event_users.user_id = %s AND event_users.user_type = 'invitee';
     """
-    data2 = db.execute(query2, user_id)
+    data2 = db_execute(query2, (user_id,))
     data2 = [
         {**event, 'id': event.pop('event_id')} 
         for event in data2 
@@ -310,7 +369,7 @@ def event(req_id):
         request_method = request.method
 
     user_id = session.get("user_id")
-    if user_id is None:
+    if user_id is None or user_id == []:
         return jsonify({"success": False, "message": "User unauthorized", "status": 401})
     
     if request_method == 'GET':
@@ -322,9 +381,9 @@ def event(req_id):
             SELECT title, description, location, duration, start_date, end_date, deadline, privacy, fullname
             FROM events
             JOIN users ON events.creator_id = users.id
-            WHERE events.id = ?
+            WHERE events.id = %s
         """
-        event_details = db.execute(query, event_id)
+        event_details = db_execute(query, (event_id,))
 
         if len(event_details) <= 0 :
             return jsonify({"success": False, "message": "Event not found", "status": 404})
@@ -333,7 +392,7 @@ def event(req_id):
 
         # if event is private make sure user is invited and authorized
         if event_details['privacy'] == 'private':
-            authorized = db.execute('SELECT * FROM event_users WHERE event_id = ? AND user_id = ?', event_id, user_id)
+            authorized = db_execute('SELECT * FROM event_users WHERE event_id = %s AND user_id = %s', (event_id, user_id))
             if len(authorized) <= 0 :
                 return jsonify({"success": False, "message": "Forbidden. You can't access this event.", "status": 403})
             
@@ -348,7 +407,7 @@ def event(req_id):
         event_id = event_id[len(event_id) - 1]
 
         # make sure that the event exists and the user is the creator
-        event = db.execute('SELECT * FROM events WHERE id = ?', event_id)
+        event = db_execute('SELECT * FROM events WHERE id = %s', (event_id,))
         if len(event) <= 0 or event[0]['hashed_id'] != event_hash or event[0]['creator_id'] != user_id:
             return redirect('/not-found')
         event = event[0]
@@ -365,12 +424,13 @@ def event(req_id):
             req['added_users'] = []
             req['added_lists'] = []
 
-        rowsUpdated = db.execute(
+        rowsUpdated = db_execute(
             """ UPDATE events SET
-            title = ?, description = ?, location = ?, deadline = ?, privacy = ?, password = ? 
-            WHERE id = ?
+            title = %s, description = %s, location = %s, deadline = %s, privacy = %s, password = %s 
+            WHERE id = %s
             """, 
-            req['title'], req['description'], req['location'], req['deadline'], req['privacy'], req['password'], event_id
+            (req['title'], req['description'], req['location'], req['deadline'], req['privacy'], req['password'], event_id),
+            True
         )
         if rowsUpdated <= 0 :
             return jsonify({"success": False, "message": "Counldn't update event."})
@@ -378,13 +438,13 @@ def event(req_id):
 
         # if the event is public remove user links and broadcast lists links
         if req['privacy'] == 'public':
-            db.execute("DELETE FROM event_users WHERE event_id = ? AND user_type = 'invitee' ", event_id)
-            db.execute("DELETE FROM event_broadcast_lists WHERE event_id = ?", event_id)
+            db_execute("DELETE FROM event_users WHERE event_id = %s AND user_type = 'invitee' ", (event_id,), True)
+            db_execute("DELETE FROM event_broadcast_lists WHERE event_id = %s", (event_id,), True)
         
         # if the event is private update user links and broadcast lists links
         if req['privacy'] == 'private':
             # get old and new broadcast lists
-            old_lists = db.execute('SELECT broadcast_list_id FROM event_broadcast_lists WHERE event_id = ?', event_id)
+            old_lists = db_execute('SELECT broadcast_list_id FROM event_broadcast_lists WHERE event_id = %s', (event_id,))
             old_lists = [l['broadcast_list_id'] for l in old_lists]
             old_lists = list(set(old_lists))
             new_lists = req['added_lists']
@@ -395,22 +455,22 @@ def event(req_id):
 
             # remove removed lists
             for bc_list in removed_lists:
-                db.execute('DELETE FROM event_broadcast_lists WHERE event_id = ? AND broadcast_list_id = ?', event_id, bc_list)
+                db_execute('DELETE FROM event_broadcast_lists WHERE event_id = %s AND broadcast_list_id = %s', (event_id, bc_list), True)
 
             # add newly added lists
             for bc_list in added_lists:
-                db.execute('INSERT INTO event_broadcast_lists (event_id, broadcast_list_id) VALUES (?, ?)', event_id, bc_list)
+                db_execute('INSERT INTO event_broadcast_lists (event_id, broadcast_list_id) VALUES (%s, %s)', (event_id, bc_list), True)
                
 
 
             # get old individually invited users
-            old_individuals = db.execute("SELECT user_id FROM event_users WHERE event_id = ? AND user_type = 'invitee' AND invitation_type = 'individual'", event_id)
+            old_individuals = db_execute("SELECT user_id FROM event_users WHERE event_id = %s AND user_type = 'invitee' AND invitation_type = 'individual'", (event_id,))
             old_individuals = [usr['user_id'] for usr in old_individuals]
             old_individuals = list(set(old_individuals))
 
 
             # get old broadcast list linked users
-            old_list_linked = db.execute("SELECT user_id FROM event_users WHERE event_id = ? AND user_type = 'invitee' AND invitation_type = 'broadcast_list'", event_id)
+            old_list_linked = db_execute("SELECT user_id FROM event_users WHERE event_id = %s AND user_type = 'invitee' AND invitation_type = 'broadcast_list'", (event_id,))
             old_list_linked = [usr['user_id'] for usr in old_list_linked]
             old_list_linked = list(set(old_list_linked))
 
@@ -423,7 +483,7 @@ def event(req_id):
             # get new broadcast list linked users
             new_list_linked = []
             for bc_list in new_lists:
-                list_contacts = db.execute("SELECT contact_id FROM broadcast_list_contacts WHERE broadcast_list_id = ?", bc_list)
+                list_contacts = db_execute("SELECT contact_id FROM broadcast_list_contacts WHERE broadcast_list_id = %s", (bc_list,))
                 list_contacts = [usr['contact_id'] for usr in list_contacts]
                 new_list_linked += list_contacts
 
@@ -443,10 +503,14 @@ def event(req_id):
             # add/update individually invited users
             for user in added_individuals:
                 # if the user exists update invitation type
-                changedRows = db.execute("UPDATE event_users SET invitation_type = 'individual' WHERE event_id = ? AND user_id = ?", event_id, user)
+                changedRows = db_execute("UPDATE event_users SET invitation_type = 'individual' WHERE event_id = %s AND user_id = %s", (event_id, user), True)
                 # if the user doesn't exist add new user
                 if changedRows <= 0:
-                    db.execute('INSERT INTO event_users (event_id, user_id, user_type, invitation_status, invitation_type) VALUES (?, ?, ?, ?, ?)', event_id, user, 'invitee', 'pending', 'individual')
+                    db_execute(
+                        'INSERT INTO event_users (event_id, user_id, user_type, invitation_status, invitation_type) VALUES (%s, %s, %s, %s, %s)', 
+                        (event_id, user, 'invitee', 'pending', 'individual'),
+                        True
+                    )
             
 
             #filter added list linked users for users that are not in new individuals
@@ -455,16 +519,24 @@ def event(req_id):
             # add/update list linked users
             for user in added_list_linked:
                 # if the user exists update invitation type
-                changedRows = db.execute("UPDATE event_users SET invitation_type = 'broadcast_list' WHERE event_id = ? AND user_id = ?", event_id, user)
+                changedRows = db_execute(
+                    "UPDATE event_users SET invitation_type = 'broadcast_list' WHERE event_id = %s AND user_id = %s", 
+                    (event_id, user),
+                    True
+                )
                 # if the user doesn't exist add new user
                 if changedRows <= 0:
-                    db.execute('INSERT INTO event_users (event_id, user_id, user_type, invitation_status, invitation_type) VALUES (?, ?, ?, ?, ?)', event_id, user, 'invitee', 'pending', 'broadcast_list')
+                    db_execute(
+                        'INSERT INTO event_users (event_id, user_id, user_type, invitation_status, invitation_type) VALUES (%s, %s, %s, %s, %s)',
+                        (event_id, user, 'invitee', 'pending', 'broadcast_list'),
+                        True
+                    )
 
             # remove removed users
             removed_users = ([usr for usr in removed_individuals if usr not in new_list_linked] + 
                              [usr for usr in removed_list_linked if usr not in new_individuals])
             for user in removed_users:
-                db.execute('DELETE FROM event_users WHERE event_id = ? AND user_id = ?', event_id, user)
+                db_execute('DELETE FROM event_users WHERE event_id = %s AND user_id = %s', (event_id, user), True)
 
 
         return {"success": True}
@@ -473,16 +545,16 @@ def event(req_id):
         event_id = req_id
         
         # make sure the event exists and user owns this event
-        event = db.execute('SELECT id FROM events WHERE id = ? AND creator_id = ?', event_id, user_id)
+        event = db_execute('SELECT id FROM events WHERE id = %s AND creator_id = %s', (event_id, user_id))
         if len(event) <= 0:
             return ({"success": False, "message": "Event not found", "status": 404})
         
         # delete secondary keys
-        db.execute('DELETE FROM event_users WHERE event_id = ?', event_id)
-        db.execute("DELETE FROM event_broadcast_lists WHERE event_id = ?", event_id)
+        db_execute('DELETE FROM event_users WHERE event_id = %s', (event_id,), True)
+        db_execute("DELETE FROM event_broadcast_lists WHERE event_id = %s", (event_id,), True)
 
         # delete primary key
-        db.execute("DELETE FROM events WHERE id = ?", event_id)
+        db_execute("DELETE FROM events WHERE id = %s", (event_id,), True)
 
         return({"success": True})
 
@@ -493,16 +565,16 @@ def createEvent():
     user_id = session.get('user_id')
 
     if request.method == 'GET':
-        if user_id is None:
+        if user_id is None or user_id == []:
             return redirect('/login')
         
-        user_broadcast_lists = db.execute("SELECT id, broadcast_list_name FROM broadcast_lists WHERE creator_id = ?", user_id)
+        user_broadcast_lists = db_execute("SELECT id, broadcast_list_name FROM broadcast_lists WHERE creator_id = %s", (user_id,))
     
         return render_template('create-event.html', lists = user_broadcast_lists)
     
 
     elif request.method == 'POST':
-        if user_id is None:
+        if user_id is None or user_id == []:
             return jsonify({"success": False, "message": "User unauthorized", "status": 401})
 
         req = request.get_json()
@@ -513,19 +585,20 @@ def createEvent():
         
         # add new event
         duration = req['duration']['hours'] + ':' + req['duration']['mins']
-        new_event_id = db.execute(
+        new_event_id = db_execute(
             """ INSERT INTO events
             (hashed_id, creator_id, title, description, location, duration, start_date, end_date, deadline, privacy, password)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) """, 
-            generate_unique_event_id("0"), user_id, req['title'], req['description'], req['location'], duration, req['start_date'], req['end_date'], req['deadline'], req['privacy'], req['password']
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) """, 
+            (generate_unique_event_id("0"), user_id, req['title'], req['description'], req['location'], duration, req['start_date'], req['end_date'], req['deadline'], req['privacy'], req['password']),
+            True
         )
 
         new_hashed_id = generate_unique_event_id(new_event_id)
-        db.execute('UPDATE events SET hashed_id = ? WHERE id = ?', new_hashed_id, new_event_id)
+        db_execute('UPDATE events SET hashed_id = %s WHERE id = %s', (new_hashed_id, new_event_id), True)
 
 
         # Link Creator
-        creator_availability = db.execute('SELECT default_availability FROM users WHERE id = ?', user_id)
+        creator_availability = db_execute('SELECT default_availability FROM users WHERE id = %s', (user_id,))
         if len(creator_availability) > 0:
             creator_availability = creator_availability[0]['default_availability']
         else: 
@@ -534,21 +607,28 @@ def createEvent():
         creator_availability = json.loads(creator_availability)
         creator_availability = [creator_availability]
 
-        db.execute('INSERT INTO event_users (event_id, user_id, user_type, user_availability, invitation_status, invitation_type) VALUES (?, ?, ?, ?, ?, ?)', new_event_id, user_id, 'creator', json.dumps(creator_availability), 'accepted', 'self')
+        db_execute(
+            'INSERT INTO event_users (event_id, user_id, user_type, user_availability, invitation_status, invitation_type) VALUES (%s, %s, %s, %s, %s, %s)', (new_event_id, user_id, 'creator', json.dumps(creator_availability), 'accepted', 'self'),
+            True
+        )
 
         if req['privacy'] == 'private':
             # Link individual users
             added_users = [usr['id'] for usr in req['added_users']]
             added_users = list(set(added_users))
             for user in added_users:
-                db.execute('INSERT INTO event_users (event_id, user_id, user_type, invitation_status, invitation_type) VALUES (?, ?, ?, ?, ?)', new_event_id, user, 'invitee', 'pending', 'individual')
+                db_execute(
+                    'INSERT INTO event_users (event_id, user_id, user_type, invitation_status, invitation_type) VALUES (%s, %s, %s, %s, %s)',
+                    (new_event_id, user, 'invitee', 'pending', 'individual'),
+                    True
+                )
 
             # Link Broadcast lists
             added_lists = list(set(req['added_lists']))
             added_contacts = []
             for bc_list in added_lists:
-                db.execute('INSERT INTO event_broadcast_lists (event_id, broadcast_list_id) VALUES (?, ?)', new_event_id, bc_list)
-                list_contacts = db.execute("SELECT contact_id FROM broadcast_list_contacts WHERE broadcast_list_id = ?", bc_list)
+                db_execute('INSERT INTO event_broadcast_lists (event_id, broadcast_list_id) VALUES (%s, %s)', (new_event_id, bc_list), True)
+                list_contacts = db_execute("SELECT contact_id FROM broadcast_list_contacts WHERE broadcast_list_id = %s", (bc_list,))
                 list_contacts = [usr['contact_id'] for usr in list_contacts]
                 added_contacts += list_contacts
 
@@ -556,7 +636,11 @@ def createEvent():
             added_contacts = list(set(added_contacts))
             added_contacts = [usr for usr in added_contacts if usr not in added_users]
             for user in added_contacts:
-                db.execute('INSERT INTO event_users (event_id, user_id, user_type, invitation_status, invitation_type) VALUES (?, ?, ?, ?, ?)', new_event_id, user, 'invitee', 'pending', 'broadcast_list')
+                db_execute(
+                    'INSERT INTO event_users (event_id, user_id, user_type, invitation_status, invitation_type) VALUES (%s, %s, %s, %s, %s)',
+                    (new_event_id, user, 'invitee', 'pending', 'broadcast_list'), 
+                    True
+                )
 
 
         return {"success": True}
@@ -570,22 +654,22 @@ def editSetting(event_hash):
     event_id = event_id[len(event_id) - 1]
     user_id = session.get('user_id')
 
-    event = db.execute("SELECT * FROM events WHERE id = ?", event_id)
+    event = db_execute("SELECT * FROM events WHERE id = %s", (event_id,))
     if len(event) <= 0 or event[0]['hashed_id'] != event_hash or event[0]['creator_id'] != user_id:
         return redirect('/not-found')
     event = event[0]
 
-    all_lists = db.execute('SELECT id, broadcast_list_name FROM broadcast_lists WHERE creator_id = ?', user_id)
+    all_lists = db_execute('SELECT id, broadcast_list_name FROM broadcast_lists WHERE creator_id = %s', (user_id,))
     all_lists = [
         {"id": l['id'], "name": l['broadcast_list_name']}
         for l in all_lists
     ]
-    added_lists = db.execute('SELECT broadcast_lists.id, broadcast_list_name FROM event_broadcast_lists JOIN broadcast_lists ON id = broadcast_list_id WHERE event_id = ?', event_id)
+    added_lists = db_execute('SELECT broadcast_lists.id, broadcast_list_name FROM event_broadcast_lists JOIN broadcast_lists ON id = broadcast_list_id WHERE event_id = %s', (event_id,))
     added_lists = [
         {"id": l['id'], "name": l['broadcast_list_name']}
         for l in added_lists
     ]
-    added_users = db.execute("SELECT users.id, users.email FROM users JOIN event_users ON users.id = event_users.user_id WHERE event_users.event_id = ? AND user_type = 'invitee' AND invitation_type = 'individual'", event_id)
+    added_users = db_execute("SELECT users.id, users.email FROM users JOIN event_users ON users.id = event_users.user_id WHERE event_users.event_id = %s AND user_type = 'invitee' AND invitation_type = 'individual'", (event_id,))
 
     data = {   
         "name": event['title'],
@@ -625,10 +709,10 @@ def declineInvitation(event_id):
             return jsonify({"success": False, "message": "Event id not provided", "status": 400})
         
         user_id = session.get("user_id")
-        if user_id is None:
+        if user_id is None or user_id == []:
             return jsonify({"success": False, "message": "User unauthorized.", "status": 401})
 
-        changedRows = db.execute("UPDATE event_users SET invitation_status = 'declined' WHERE event_id = ? AND user_id = ?", event_id, user_id)
+        changedRows = db_execute("UPDATE event_users SET invitation_status = 'declined' WHERE event_id = %s AND user_id = %s", (event_id, user_id), True)
 
         if changedRows <= 0:
             return jsonify({"success": False, "message": "Update unsuccessfull.", "status": 404})
@@ -648,7 +732,7 @@ def events(event_hash):
     if request_method == 'GET':
         # check if user is logged in    
         user_id = session.get('user_id')
-        if user_id is None: loggedin = False
+        if user_id is None or user_id == []: loggedin = False
         else: loggedin = True
 
         if not event_hash:
@@ -666,9 +750,9 @@ def events(event_hash):
             SELECT hashed_id, title, description, location, duration, start_date, end_date, deadline, privacy, users.fullname
             FROM events
             JOIN users ON events.creator_id = users.id
-            WHERE events.id = ?
+            WHERE events.id = %s
         """
-        event = db.execute(query, event_id)
+        event = db_execute(query, (event_id,))
 
         if len(event) <= 0 or event[0]['hashed_id'] != event_hash:
             return render_template('error.html', data={
@@ -703,7 +787,7 @@ def events(event_hash):
         # check if event is pubilc
         if event['privacy'] == 'public':
             if loggedin: # check if already submitted
-                submitted = db.execute("SELECT user_id FROM event_users WHERE user_id = ? AND event_id = ? AND invitation_status = 'accepted' ", user_id, event_id)
+                submitted = db_execute("SELECT user_id FROM event_users WHERE user_id = %s AND event_id = %s AND invitation_status = 'accepted' ", (user_id, event_id))
                 if len(submitted) > 0:
                     return render_template('error.html', data={
                         'code': "409",
@@ -713,7 +797,7 @@ def events(event_hash):
                     })
                 
                 # get user's defaul availability
-                user_availability = db.execute('SELECT default_availability FROM users WHERE id = ?', user_id)
+                user_availability = db_execute('SELECT default_availability FROM users WHERE id = %s', (user_id,))
 
                 if len(user_availability) <= 0 : user_availability = default_availability
                 else : user_availability = user_availability[0]['default_availability']
@@ -750,7 +834,7 @@ def events(event_hash):
 
 
         # if logged in check if they have direct access 
-        access = db.execute('SELECT invitation_status FROM event_users WHERE event_id = ? AND user_id = ?', event_id, user_id)
+        access = db_execute('SELECT invitation_status FROM event_users WHERE event_id = %s AND user_id = %s', (event_id, user_id))
 
 
         # if they don't have access or have declined the invitation display password page
@@ -771,7 +855,7 @@ def events(event_hash):
 
 
         ## render page
-        user_availability = db.execute('SELECT default_availability FROM users WHERE id = ?', user_id)
+        user_availability = db_execute('SELECT default_availability FROM users WHERE id = %s', (user_id,))
 
         if len(user_availability) <= 0 :
             user_availability = default_availability
@@ -791,7 +875,7 @@ def events(event_hash):
     elif request_method == 'PATCH':
         # check if user is logged in
         user_id = session.get('user_id')
-        if user_id is None: loggedin = False
+        if user_id is None or user_id == []: loggedin = False
         else: loggedin = True
 
         # check if event hash is valid
@@ -802,7 +886,7 @@ def events(event_hash):
         event_id = event_id[len(event_id) - 1]
 
         ## check if event exists
-        event = db.execute("SELECT hashed_id, deadline, privacy FROM events WHERE id = ?", event_id)
+        event = db_execute("SELECT hashed_id, deadline, privacy FROM events WHERE id = %s", (event_id,))
 
         if len(event) <= 0 or event[0]['hashed_id'] != event_hash:
             return jsonify({'success': False, 'message':"Event not found.", 'status': 404})
@@ -844,7 +928,11 @@ def events(event_hash):
                 availability = stripIndexesFromIntervals(availability)
                 availability = json.dumps(availability)
                 # submit data to a new table
-                submission_id = db.execute('INSERT INTO unknown_submissions (event_id, fullname, user_availability) VALUES (?, ?, ?)', event_id, session.get('fullname'), availability)
+                submission_id = db_execute(
+                    'INSERT INTO unknown_submissions (event_id, fullname, user_availability) VALUES (%s, %s, %s)', 
+                    (event_id, session.get('fullname'), availability),
+                    True
+                )
 
                 if not submission_id:
                     return jsonify({"success": False, "message": "Server error. Could not submit your availability.", "status": 500})
@@ -862,7 +950,7 @@ def events(event_hash):
         # if logged in  
         
         # make sure user hasn't already submitted
-        user_submitted = db.execute("SELECT user_id FROM event_users WHERE user_id = ? AND event_id = ? AND invitation_status = 'accepted'", user_id, event_id)
+        user_submitted = db_execute("SELECT user_id FROM event_users WHERE user_id = %s AND event_id = %s AND invitation_status = 'accepted'", (user_id, event_id), True)
         if len(user_submitted) > 0:
             return jsonify({"success": False, "message": "You already submitted you availability.", "status": 409})    
           
@@ -887,21 +975,21 @@ def events(event_hash):
         
         # submit && check access at the same time
         if event['privacy'] == 'private':
-            changed_rows = db.execute("""
+            changed_rows = db_execute("""
                 UPDATE event_users 
-                SET user_availability = ?, invitation_status = 'accepted' 
-                WHERE user_id = ? AND event_id = ?
+                SET user_availability = %s, invitation_status = 'accepted' 
+                WHERE user_id = %s AND event_id = %s
             """, 
-                availability, user_id, event_id
+                (availability, user_id, event_id), True
             )
             if changed_rows <= 0 :
                 return jsonify({"success": False, "message": "Forbidden. You can't access this event.", "status": 403})
             
         else:
-            db.execute("""
+            db_execute("""
                 INSERT INTO event_users (event_id, user_id, user_type, invitation_type, invitation_status, user_availability) 
-                VALUES (?, ?, 'invitee', 'public', 'accepted', ?)
-            """, event_id, user_id, availability)
+                VALUES (%s, %s, 'invitee', 'public', 'accepted', %s)
+            """, (event_id, user_id, availability), True)
 
         return jsonify({"success": True})
 
@@ -915,7 +1003,7 @@ def events(event_hash):
         event_id = event_id[len(event_id) - 1]
 
         ## check if event exists
-        event = db.execute("SELECT hashed_id, deadline, password, privacy FROM events WHERE id = ?", event_id)
+        event = db_execute("SELECT hashed_id, deadline, password, privacy FROM events WHERE id = %s", (event_id,))
 
         if len(event) <= 0 or event[0]['hashed_id'] != event_hash:
             return jsonify({'success': False, 'message':"Event not found.", 'status': 404})
@@ -939,7 +1027,7 @@ def events(event_hash):
         user_id = session.get('user_id')
 
         ## if user not logged in
-        if user_id is None:
+        if user_id is None or user_id == []:
 
             # check if fullname is provided
             if not session.get('fullname') and not req['fullname']:
@@ -956,17 +1044,17 @@ def events(event_hash):
         
         if event['privacy'] == 'private':
             # if user logged in make sure they don't already have access then give access
-            access = db.execute('SELECT invitation_status FROM event_users WHERE user_id = ? AND event_id = ?', user_id, event_id)
+            access = db_execute('SELECT invitation_status FROM event_users WHERE user_id = %s AND event_id = %s', (user_id, event_id), True)
             if len(access) <= 0 :
-                db.execute("""
+                db_execute("""
                     INSERT INTO event_users
                     (event_id, user_id, user_type, invitation_type, invitation_status)
-                    VALUES (?, ?, 'invitee', 'password', 'pending')
-                """, event_id, user_id
+                    VALUES (%s, %s, 'invitee', 'password', 'pending')
+                """, (event_id, user_id), True
                 )
             # if the user previously declined the invitation change it to 'pending'
             elif access[0]['invitation_status'] == 'declined':
-                db.execute("UPDATE event_users SET invitation_status = 'pending' WHERE user_id = ? AND event_id = ?", user_id, event_id)
+                db_execute("UPDATE event_users SET invitation_status = 'pending' WHERE user_id = %s AND event_id = %s", (user_id, event_id), True)
         
 
         return jsonify({'success': True})
@@ -983,7 +1071,7 @@ def changeAvailability(event_hash):
     if request_method == 'GET':
         # check if user is logged in    
         user_id = session.get('user_id')
-        if user_id is None: loggedin = False
+        if user_id is None or user_id == []: loggedin = False
         else: loggedin = True
 
         if not event_hash:
@@ -1001,9 +1089,9 @@ def changeAvailability(event_hash):
             SELECT hashed_id, title, description, location, duration, start_date, end_date, deadline, privacy, users.fullname
             FROM events
             JOIN users ON events.creator_id = users.id
-            WHERE events.id = ?
+            WHERE events.id = %s
         """
-        event = db.execute(query, event_id)
+        event = db_execute(query, (event_id,))
 
         if len(event) <= 0 or event[0]['hashed_id'] != event_hash:
             return render_template('error.html', data={
@@ -1025,12 +1113,12 @@ def changeAvailability(event_hash):
         # check if not submitted yet and get user availability
         if loggedin: 
             # check if not already submitted
-            submitted = db.execute("SELECT user_id FROM event_users WHERE user_id = ? AND event_id = ? AND invitation_status = 'accepted' ", user_id, event_id)
+            submitted = db_execute("SELECT user_id FROM event_users WHERE user_id = %s AND event_id = %s AND invitation_status = 'accepted' ", (user_id, event_id))
             if len(submitted) <= 0:
                 return redirect('/events/' + event_hash)
             
             # get user's submitted availability
-            user_availability = db.execute("SELECT user_availability FROM event_users WHERE user_id = ? AND event_id = ? AND invitation_status = 'accepted'", user_id, event_id)
+            user_availability = db_execute("SELECT user_availability FROM event_users WHERE user_id = %s AND event_id = %s AND invitation_status = 'accepted'", (user_id, event_id))
 
         # check if not submitted yet and get user availability
         elif not loggedin: 
@@ -1040,7 +1128,7 @@ def changeAvailability(event_hash):
 
             # get user availability
             submission_id = session.get('submitted_events')[event_id]
-            user_availability = db.execute('SELECT user_availability FROM unknown_submissions WHERE event_id = ? AND id = ?', event_id, submission_id)
+            user_availability = db_execute('SELECT user_availability FROM unknown_submissions WHERE event_id = %s AND id = %s', (event_id, submission_id))
 
             
         # format availability
@@ -1071,7 +1159,7 @@ def changeAvailability(event_hash):
     elif request_method == 'PATCH':
         # check if user is logged in    
         user_id = session.get('user_id')
-        if user_id is None: loggedin = False
+        if user_id is None or user_id == []: loggedin = False
         else: loggedin = True
 
         if not event_hash:
@@ -1081,7 +1169,7 @@ def changeAvailability(event_hash):
         event_id = event_id[len(event_id) - 1]
 
         ## check if event exists
-        event = db.execute("SELECT hashed_id, deadline FROM events WHERE events.id = ?", event_id)
+        event = db_execute("SELECT hashed_id, deadline FROM events WHERE events.id = %s", (event_id,))
 
         if len(event) <= 0 or event[0]['hashed_id'] != event_hash:
             return jsonify({'succes': False, 'message': "Couldn't find the event.", 'status': 404})
@@ -1114,7 +1202,11 @@ def changeAvailability(event_hash):
 
         # update and check if the user hasn't already submitted at the same time
         if loggedin: 
-            changedRows = db.execute("UPDATE event_users SET user_availability = ? WHERE event_id = ? AND user_id = ? AND invitation_status = 'accepted'", availability, event_id, user_id)
+            changedRows = db_execute(
+                "UPDATE event_users SET user_availability = %s WHERE event_id = %s AND user_id = %s AND invitation_status = 'accepted'", 
+                (availability, event_id, user_id),
+                True
+                )
 
             if changedRows <= 0:
                 return jsonify({'succes': False, 'message': "Can't edit. You haven't submitted yet.", 'status': 403})
@@ -1129,9 +1221,8 @@ def changeAvailability(event_hash):
             
             # update
             submission_id = session.get('submitted_events')[event_id]
-            changedRows = db.execute('UPDATE unknown_submissions SET user_availability = ? WHERE id = ? AND event_id = ?', availability, submission_id, event_id)
+            changedRows = db_execute('UPDATE unknown_submissions SET user_availability = %s WHERE id = %s AND event_id = %s', (availability, submission_id, event_id), True)
 
-            print(availability)
 
             if changedRows <= 0:
                 return jsonify({'succes': False, 'message': "Couldn't update your availability.", 'status': 500})
@@ -1150,23 +1241,23 @@ def submissions(event_hash):
     event_id = event_hash.split('o')
     event_id = event_id[len(event_id) - 1]
 
-    event = db.execute("SELECT * FROM events WHERE id = ?", event_id)
+    event = db_execute("SELECT * FROM events WHERE id = %s", (event_id,))
     if len(event) <= 0 or event[0]['hashed_id'] != event_hash or event[0]['creator_id'] != user_id:
         return redirect('/not-found')
     event = event[0]
 
 
     # get submissions (users with accounts)
-    user_submissions = db.execute("""
+    user_submissions = db_execute("""
         SELECT event_users.user_availability, users.fullname
         FROM event_users
         JOIN users ON event_users.user_id = users.id
-        WHERE event_users.event_id = ? 
+        WHERE event_users.event_id = %s 
         AND event_users.invitation_status = 'accepted'
-    """, event_id)
+    """, (event_id,))
     
     # get submissions (users with no accounts)
-    unknown_submissions = db.execute("SELECT user_availability, fullname FROM unknown_submissions WHERE event_id = ?", event_id)
+    unknown_submissions = db_execute("SELECT user_availability, fullname FROM unknown_submissions WHERE event_id = %s", (event_id,))
 
     # format submissions
     submissions = user_submissions + unknown_submissions
@@ -1177,14 +1268,13 @@ def submissions(event_hash):
 
 
     # get missing submissions
-    missing_submissions = db.execute("""
+    missing_submissions = db_execute("""
         SELECT users.fullname FROM users
         JOIN event_users ON users.id = event_users.user_id
-        WHERE event_users.event_id = ? AND invitation_status IN ('pending', 'declined')
-     """, event_id)
+        WHERE event_users.event_id = %s AND invitation_status IN ('pending', 'declined')
+     """, (event_id,))
     
     missing_submissions = [sub['fullname'] for sub in missing_submissions]
-    print(missing_submissions)
     return render_template('submissions.html', submissions=submissions, event=event,  missing_submissions=missing_submissions)
 
 
@@ -1202,10 +1292,10 @@ def myAvailability():
     user_id = session.get('user_id')
 
     if request_method == 'GET':
-        if user_id is None:
+        if user_id is None or user_id == []:
             return redirect('/login')
         
-        availability = db.execute('SELECT default_availability FROM users WHERE id = ?', user_id)
+        availability = db_execute('SELECT default_availability FROM users WHERE id = %s', (user_id,))
 
         if len(availability) <= 0 :
             availability = default_availability
@@ -1223,12 +1313,11 @@ def myAvailability():
         return render_template('my-availability.html', availability=availability)
 
     elif request_method == 'PATCH':
-        if user_id is None:
+        if user_id is None or user_id == []:
             return jsonify({"success": False, "message": "User unauthorized.", "status": 401})
 
         # validate availability
         availability = request.get_json()
-        print(availability)
         for day in availability:
             if 'unavailable' in availability[day]:
                 availability[day] = []
@@ -1243,7 +1332,7 @@ def myAvailability():
             
         availability = json.dumps(availability)
 
-        changedRows = db.execute('UPDATE users SET default_availability = ? WHERE id = ?', availability, user_id)
+        changedRows = db_execute('UPDATE users SET default_availability = %s WHERE id = %s', (availability, user_id), True)
         if changedRows <= 0:
             return jsonify({"success": False, "message": "Couldn't update your availability.", "status": 404})
             
@@ -1259,7 +1348,7 @@ def myAvailability():
 @login_required
 def broadcastLists(): 
     user_id = session.get('user_id')
-    user_broadcast_lists = db.execute("SELECT id, broadcast_list_name FROM broadcast_lists WHERE creator_id = ?", user_id)
+    user_broadcast_lists = db_execute("SELECT id, broadcast_list_name FROM broadcast_lists WHERE creator_id = %s", (user_id,))
     return render_template('broadcast-lists.html', data = user_broadcast_lists)
 
 
@@ -1272,7 +1361,7 @@ def broadcastList():
 
 
     user_id = session.get('user_id')
-    if user_id is None:
+    if user_id is None or user_id == []:
         return jsonify({"success": False, "message": "User unauthorized", "status": 401})
 
     if request_method == "POST":
@@ -1285,7 +1374,7 @@ def broadcastList():
         list_name = ' '.join(list_name.split())
 
         # check if the user already has a list with this name
-        existing_list_names = db.execute("SELECT broadcast_list_name FROM broadcast_lists WHERE creator_id = ?", user_id)
+        existing_list_names = db_execute("SELECT broadcast_list_name FROM broadcast_lists WHERE creator_id = %s", (user_id,))
         existing_list_names = [list['broadcast_list_name'].lower() for list in existing_list_names]
 
         if list_name.lower() in existing_list_names:
@@ -1297,7 +1386,7 @@ def broadcastList():
             return jsonify({'success': False, "message": "Add at least 1 user to the list.", "status": 400})
         
         usersList = [usr["id"] for usr in usersList]
-        existing_user_ids = db.execute('SELECT id FROM users')
+        existing_user_ids = db_execute('SELECT id FROM users')
         existing_user_ids = [usr['id'] for usr in existing_user_ids]
 
         usersList = [id for id in usersList if id in existing_user_ids and id != user_id]
@@ -1307,12 +1396,12 @@ def broadcastList():
 
 
         # create new list
-        new_list_id = db.execute('INSERT INTO broadcast_lists (creator_id, broadcast_list_name) VALUES (?, ?)', user_id, list_name)
+        new_list_id = db_execute('INSERT INTO broadcast_lists (creator_id, broadcast_list_name) VALUES (%s, %s)', (user_id, list_name), True)
 
         for user in usersList:
-            db.execute('INSERT INTO broadcast_list_contacts (broadcast_list_id, contact_id) VALUES (?, ?)', new_list_id, user)
+            db_execute('INSERT INTO broadcast_list_contacts (broadcast_list_id, contact_id) VALUES (%s, %s)', (new_list_id, user), True)
 
-        user_broadcast_lists = db.execute("SELECT id, broadcast_list_name FROM broadcast_lists WHERE creator_id = ?", user_id)
+        user_broadcast_lists = db_execute("SELECT id, broadcast_list_name FROM broadcast_lists WHERE creator_id = %s", (user_id,))
         return jsonify({"success": True, 'lists': user_broadcast_lists})
 
     elif request_method == 'PATCH':
@@ -1333,13 +1422,13 @@ def broadcastList():
             return jsonify({"success": False, "message": "List not found.", "status": 404})
         
         # check if the user already has a list with this name then update the list name
-        existing_list_names = db.execute("SELECT broadcast_list_name FROM broadcast_lists WHERE creator_id = ?", user_id)
+        existing_list_names = db_execute("SELECT broadcast_list_name FROM broadcast_lists WHERE creator_id = %s", (user_id,))
         existing_list_names = [list['broadcast_list_name'].lower() for list in existing_list_names]
 
         if new_list_name != old_list_name and new_list_name.lower() in existing_list_names:
             return jsonify({'success': False, "message": "You already have a list with this name.", "status": 409})
         
-        db.execute('UPDATE broadcast_lists SET broadcast_list_name = ? WHERE id = ?', new_list_name, list_id)
+        db_execute('UPDATE broadcast_lists SET broadcast_list_name = %s WHERE id = %s', (new_list_name, list_id), True)
 
         # get old & new list contacts
         new_list = req["usersList"]
@@ -1353,19 +1442,19 @@ def broadcastList():
             return jsonify({'success': False, 'message': "You can't add yourself to the list.", "status": 403})
 
         # check that new users ids are valid then add the new contacts
-        existing_user_ids = db.execute('SELECT id FROM users')
+        existing_user_ids = db_execute('SELECT id FROM users')
         existing_user_ids = [usr['id'] for usr in existing_user_ids]
 
         added_users = [usr for usr in new_list if usr not in old_list]
         added_users = [usr for usr in added_users if usr in existing_user_ids]
 
         for user in added_users:
-            db.execute('INSERT INTO broadcast_list_contacts (broadcast_list_id, contact_id) VALUES (?, ?)', list_id, user)
+            db_execute('INSERT INTO broadcast_list_contacts (broadcast_list_id, contact_id) VALUES (%s, %s)', (list_id, user), True)
         
         # remove contacts
         removed_users = [usr for usr in old_list if usr not in new_list]
         for user in removed_users:
-            db.execute('DELETE FROM broadcast_list_contacts WHERE broadcast_list_id = ? AND contact_id = ?', list_id, user)
+            db_execute('DELETE FROM broadcast_list_contacts WHERE broadcast_list_id = %s AND contact_id = %s', (list_id, user), True)
 
         return jsonify({"success": True})
     
@@ -1397,40 +1486,40 @@ def broadcastList():
             return jsonify({"success": False, "message": "List id is missing from the request.", "status": 400})
         
         # check if an ongoing event is using this list
-        events_using_list = db.execute("SELECT deadline FROM events JOIN event_broadcast_lists ON events.id = event_broadcast_lists.event_id WHERE broadcast_list_id = ?", list_id) 
+        events_using_list = db_execute("SELECT deadline FROM events JOIN event_broadcast_lists ON events.id = event_broadcast_lists.event_id WHERE broadcast_list_id = %s", (list_id,)) 
         events_using_list = [event['deadline'] for event in events_using_list if not dateHasPassed(event['deadline'])]
 
         if len(events_using_list) > 0:
             return jsonify({"success": False, "message": "An ongoing event is using this list. Wait until the event is over.", "status": 409})
             
         # check if the user owns this list
-        owned_by_user = db.execute('SELECT id FROM broadcast_lists WHERE id = ? AND creator_id = ?', list_id, user_id)
+        owned_by_user = db_execute('SELECT id FROM broadcast_lists WHERE id = %s AND creator_id = %s', (list_id, user_id))
         if len(owned_by_user) <= 0 :
             return jsonify({"success": False, "message": "Couldn't delete this list.", "status": 404})
 
 
         # delete contacts links to this list (foreign key)
-        db.execute("DELETE FROM broadcast_list_contacts WHERE broadcast_list_id = ?", list_id)
+        db_execute("DELETE FROM broadcast_list_contacts WHERE broadcast_list_id = %s", (list_id), True)
 
         # delete event links to this list (foreign key)
-        db.execute('DELETE FROM event_broadcast_lists WHERE broadcast_list_id = ?', list_id)
+        db_execute('DELETE FROM event_broadcast_lists WHERE broadcast_list_id = %s', (list_id), True)
 
         # delete list (primary key)
-        deleted_rows = db.execute('DELETE FROM broadcast_lists WHERE id = ? AND creator_id = ?', list_id, user_id)
+        deleted_rows = db_execute('DELETE FROM broadcast_lists WHERE id = %s AND creator_id = %s', (list_id, user_id), True)
 
         if deleted_rows == 0:
             return jsonify({'success': False, "message": "Couldn't delete this list.", "status": 404})
         
 
-        user_broadcast_lists = db.execute("SELECT id, broadcast_list_name FROM broadcast_lists WHERE creator_id = ?", user_id)
+        user_broadcast_lists = db_execute("SELECT id, broadcast_list_name FROM broadcast_lists WHERE creator_id = %s", (user_id,))
         return jsonify({"success": True, 'lists': user_broadcast_lists})
 
 
-## USER EXISTS? AND ISN'T YOU?
+## USER EXISTS%s AND ISN'T YOU%s
 @app.route('/api/user-exists', methods = ["POST"])
 def userExists():
     user_id = session.get("user_id")
-    if user_id is None:
+    if user_id is None or user_id == []:
         return jsonify({"success": False, "message": "User unauthorized", "status": 401})
     
     req = request.get_json()
@@ -1438,7 +1527,7 @@ def userExists():
     if not "email" in req:
         return jsonify({'success': False, "message": "No email provided.", "status": 400})
 
-    user = db.execute('SELECT id, fullname, email FROM users WHERE email == ? ', req["email"].lower())
+    user = db_execute('SELECT id, fullname, email FROM users WHERE email == %s ', (req["email"].lower(),))
 
     if len(user) <= 0 :
         return jsonify({'success': False, "message": "User not found", "status": 404})
@@ -1454,12 +1543,11 @@ def userExists():
 
 
 
-
 # Custom 404 error handler
 @app.errorhandler(404)
 def page_not_found(e):
     user_id = session.get('user_id')
-    if user_id is None: loggedin = False
+    if user_id is None or user_id == []: loggedin = False
     else: loggedin = True
 
     return render_template('error.html', data={
@@ -1472,7 +1560,7 @@ def page_not_found(e):
 @app.errorhandler(Exception) 
 def internal_server_error(e) :
     user_id = session.get('user_id')
-    if user_id is None: loggedin = False
+    if user_id is None or user_id == []: loggedin = False
     else: loggedin = True
 
     return render_template('error.html', data={
