@@ -5,7 +5,7 @@
 
 {% block main %}
     <!-- Event Info -->
-    <div class="d-flex flex-column align-items-center">
+    <div class="d-flex flex-column align-items-center" id="event-info-section">
         <div class="d-flex flex-column gap-2" style="max-width: 35rem;">
             <div>
                 <h1 class="fs-4 fw-semibold" id="event-title"></h1>
@@ -40,8 +40,9 @@
 
     <!-- General Availability -->
     <div class="d-flex flex-column align-items-center">
-        <div class="mx-auto d-flex flex-column align-items-center py-5 text-secondary">
+        <div class="mx-auto d-flex flex-column align-items-center py-5 text-secondary text-center">
             <p class="fs-3 pb-1 border-bottom-primary text-primary">Your General Availability For This Event</p>
+            <p class="mt-2 text-center">Note: 0:00 -> 0:00 means you're available for 24hrs.</p>
         </div>
 
         <div class="mx-auto d-flex flex-column align-items-center gap-2" id="general-availability" style="width: fit-content;"></div>
@@ -49,7 +50,7 @@
 
     <!-- Calendar -->
     <div class="d-flex flex-column align-items-center">
-        <div class="mx-auto d-flex flex-column align-items-center py-5 text-secondary">
+        <div class="mx-auto d-flex flex-column align-items-center py-5 text-secondary text-center">
             <p class="fs-3 pb-1 border-bottom-primary text-primary">Overwrite Specific Days</p>
         </div>
 
@@ -168,7 +169,7 @@
 
 <!-- availability script -->
 <script>
-    const submitBtb = document.getElementById('submit-btn')
+    const submitBtn = document.getElementById('submit-btn')
     const errorMessages = ['Time overlaps with another set of times', 'Choose an end time later than the start time']
     let daysNames = {mon: 'Monday', tue: 'Tuesday', wed: 'Wednesday', thu: 'Thursday', fri: 'Friday', sat: 'Saturday', sun: 'Sunday'}
     const duplicateModal = new bootstrap.Modal('#duplicate-modal', {
@@ -292,7 +293,7 @@
         // check if intervals are valid for the day else show an error and don't continue
         let srcIntervals = newAvailability[0][day]
         for (let i = 0; i < srcIntervals.length; i++){
-            if (srcIntervals[i].length != 3) {
+            if (srcIntervals[i].length != 3 && srcIntervals[i] != 'unavailable') {
                 appendAlert(`Fix ${daysNames[day]} timing errors before copying the timing to other days.`, 'danger')
                 return
             }
@@ -329,7 +330,7 @@
 
         // if source intervals have error show error and don't continue
         for (let i = 0; i < srcIntervals.length; i++){
-            if (srcIntervals[i].length != 3) {
+            if (srcIntervals[i].length != 3 && srcIntervals[i] != 'unavailable') {
                 appendAlert(`Fix ${daysNames[sourceDay]} timing errors before copying the timing to other days.`, 'danger')
                 return
             }
@@ -604,6 +605,9 @@
         
         // Function to check if two intervals overlap
         function isOverlapping(startA, endA, startB, endB) {
+            if (endA == 0) endA = 24*60
+            if (endB == 0) endB = 24*60
+            
             return startA < endB && startB < endA;
         }
     
@@ -1217,7 +1221,7 @@
         document.querySelector('#event-location').textContent = event.location
         document.querySelector('#event-duration').textContent = hours + mins
         
-        document.querySelector('#event-date-range').textContent = `${start_date}  ->  ${end_date}`
+        document.querySelector('#event-date-range').innerHTML = start_date +  "<br style='display:none'>" + " -> " + end_date
         document.querySelector('#event-privacy').textContent = event.privacy
         document.querySelector('#event-deadline').textContent = deadline
     }
@@ -1232,76 +1236,88 @@
     renderCalendarInitial(event)
 
 
-    submitBtb.addEventListener('click', () => {
-        let errorsFound = false
-        
-        // check general availability for errors
-        for (const day of Object.keys(daysNames)) {
-            if (errorsFound) break; // Break out of the outer loop if an error is found
-        
-            let dayIntervals = formatIntervals(newAvailability[0][day]);
-        
-            for (const interval of dayIntervals) {
-                if (interval.length === 4) {
-                    appendAlert(`Please fix all errors on ${daysNames[day]} before submitting.`, 'danger');
-                    errorsFound = true;
-                    break; // Break out of the inner loop if an error is found
-                }
-            }
-        }
-
-        // check specific day availability for errors
-        if (newAvailability.length > 0) {
-            for (let i = 1; i < newAvailability.length; i++) {
-
-                if (errorsFound) break;
-                
-                let dayIntervals = newAvailability[i].intervals
-
+    let loading = false
+    submitBtn.addEventListener('click', () => {
+        if (!loading) {
+            let errorsFound = false
+            
+            // check general availability for errors
+            for (const day of Object.keys(daysNames)) {
+                if (errorsFound) break; // Break out of the outer loop if an error is found
+            
+                let dayIntervals = formatIntervals(newAvailability[0][day]);
+            
                 for (const interval of dayIntervals) {
                     if (interval.length === 4) {
-                        
-                        appendAlert(`Please fix all errors on ${newAvailability[i].date} before submitting.`, 'danger');
+                        appendAlert(`Please fix all errors on ${daysNames[day]} before submitting.`, 'danger');
                         errorsFound = true;
                         break; // Break out of the inner loop if an error is found
                     }
                 }
-
+            }
+    
+            // check specific day availability for errors
+            if (newAvailability.length > 0) {
+                for (let i = 1; i < newAvailability.length; i++) {
+    
+                    if (errorsFound) break;
+                    
+                    let dayIntervals = newAvailability[i].intervals
+    
+                    for (const interval of dayIntervals) {
+                        if (interval.length === 4) {
+                            
+                            appendAlert(`Please fix all errors on ${newAvailability[i].date} before submitting.`, 'danger');
+                            errorsFound = true;
+                            break; // Break out of the inner loop if an error is found
+                        }
+                    }
+    
+                }
+    
+            }
+    
+    
+            if (!errorsFound) {
+                loading = true
+                submitBtn.disabled = true
+                appendAlert('Updating...', 'loading')
+                
+                const eventHash = window.location.href.split('/').pop();
+                fetch(`/change-availability/${eventHash}`, {
+                    //method: 'patch',
+                    method: 'post',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-HTTP-Method-Override': 'PATCH',
+                    },
+                    body: JSON.stringify(newAvailability)
+                })
+                .then(res => {
+                    if (!res.ok) {
+                        appendAlert("Couldn't connect to the server.", 'warning')
+                        throw new Error('Network response was not okay')
+                    }
+                    return res.json()
+                })
+                .then(data => {
+                    if (data.success) {
+                        appendAlert('Availability Updated Successfully!', 'success')
+                        window.location.href = '/'
+                    }
+                    else if (data.status && data.status == 401) {
+                        window.location.reload()
+                    }
+                    else {
+                        appendAlert(data.message, 'danger')
+                    }
+                
+                    loading = false
+                    submitBtn.disabled = false
+                })
+                .catch(err => console.log(err))
             }
 
-        }
-
-
-        if (!errorsFound) {
-            const eventHash = window.location.href.split('/').pop();
-            fetch(`/change-availability/${eventHash}`, {
-                //method: 'patch',
-                method: 'post',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-HTTP-Method-Override': 'PATCH',
-                },
-                body: JSON.stringify(newAvailability)
-            })
-            .then(res => {
-                if (!res.ok) {
-                    appendAlert("Couldn't connect to the server.", 'warning')
-                    throw new Error('Network response was not okay')
-                }
-                return res.json()
-            })
-            .then(data => {
-                if (data.success) {
-                    appendAlert('Availability Updated Successfully!', 'success')
-                }
-                else if (data.status && data.status == 401) {
-                    window.location.reload()
-                }
-                else {
-                    appendAlert(data.message, 'danger')
-                }
-            })
-            .catch(err => console.log(err))
         }
 
     })

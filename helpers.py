@@ -4,10 +4,38 @@ from functools import wraps
 from datetime import datetime
 import hashlib
 import re
+import pymysql
+import os
 
-from cs50 import SQL
 
-db = SQL("sqlite:///find-a-time.db")
+def db_select(query, tuple=()):
+    timeout = 10
+    connection = pymysql.connect(
+        charset="utf8mb4",
+        connect_timeout=timeout,
+        cursorclass=pymysql.cursors.DictCursor,
+        db=os.getenv('DB_NAME'),
+        host=os.getenv('DB_HOST'),
+        password=os.getenv('DB_PASSWORD'),
+        read_timeout=timeout,
+        port=int(os.getenv('DB_PORT')),
+        user=os.getenv('DB_USER'),
+        write_timeout=timeout,
+    )
+
+    try: 
+        cursor = connection.cursor()
+
+        if len(tuple):
+            cursor.execute(query, tuple)
+        else:
+            cursor.execute(query)
+
+        return cursor.fetchall()
+
+    finally:
+        connection.close()
+
 
 
 
@@ -16,8 +44,6 @@ def login_required(f):
     
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        print('login required ###################')
-        print(session.get('user_id'))
         if session.get("user_id") is None or session.get('user_id') == []:
             return redirect("/login")
         return f(*args, **kwargs)
@@ -140,14 +166,14 @@ def validateNewEventInfo(info):
                 if user['id'] == user_id:
                     return {"success": False, "message":"Can't add yourself to the list.", "status": 400}
                     
-                found = db.execute('SELECT * FROM users WHERE id = ? AND email = ?', user['id'], user['email'])
+                found = db_select('SELECT * FROM users WHERE id = %s AND email = %s', (user['id'], user['email'].lower()))
                 if len(found) <= 0 :
                     return {"success": False, "message":"One of the users in the list was not found.", "status": 404}
                 
         # Validate broadcast lists
         if info['added_lists']:
             for list in info['added_lists']:
-                found = db.execute('SELECT * FROM broadcast_lists WHERE id = ? AND creator_id = ?', list, user_id)
+                found = db_select('SELECT * FROM broadcast_lists WHERE id = %s AND creator_id = %s', (list, user_id))
                 if len(found) <= 0:
                     return {"success": False, "message":"One of the broadcast lists was not found.", "status": 404}
                 
@@ -210,14 +236,14 @@ def validateUpdateEventInfo(info, event):
                 if user['id'] == user_id:
                     return {"success": False, "message":"Can't add yourself to the list.", "status": 400}
                     
-                found = db.execute('SELECT * FROM users WHERE id = ? AND email = ?', user['id'], user['email'])
+                found = db_select('SELECT * FROM users WHERE id = %s AND email = %s', (user['id'], user['email'].lower()))
                 if len(found) <= 0 :
                     return {"success": False, "message":"One of the users in the list was not found.", "status": 404}
                 
         # Validate broadcast lists
         if info['added_lists']:
             for list in info['added_lists']:
-                found = db.execute('SELECT * FROM broadcast_lists WHERE id = ? AND creator_id = ?', list, user_id)
+                found = db_select('SELECT * FROM broadcast_lists WHERE id = %s AND creator_id = %s', (list, user_id))
                 if len(found) <= 0:
                     return {"success": False, "message":"One of the broadcast lists was not found.", "status": 404}
                 
@@ -321,6 +347,9 @@ def is_valid_interval(interval):
     return not (end <= start and start != 0 and end != 0)
 
 def is_overlapping(start_a, end_a, start_b, end_b):
+    if end_a == 0 : end_a = 24*60
+    if end_b == 0 : end_b = 24*60
+            
     return start_a < end_b and start_b < end_a
 
 def detect_overlapping_intervals(intervals):
@@ -354,7 +383,7 @@ def detect_overlapping_intervals(intervals):
 ## Broadcast Lists
 def getListName(list_id, user_id):
     ## get List Name
-    list_name = db.execute('SELECT broadcast_list_name FROM broadcast_lists WHERE id = ? AND creator_id = ?', list_id, user_id)
+    list_name = db_select('SELECT broadcast_list_name FROM broadcast_lists WHERE id = %s AND creator_id = %s', (list_id, user_id))
 
     if len(list_name) <= 0:
         return False
@@ -367,7 +396,11 @@ def getListName(list_id, user_id):
 def getListContacts(list_id):
 
     ## get list contacts
-    contacts = db.execute('SELECT id, fullname, email FROM users JOIN broadcast_list_contacts ON users.id = broadcast_list_contacts.contact_id WHERE broadcast_list_contacts.broadcast_list_id = ?', list_id)
+    contacts = db_select('''
+        SELECT users.id, fullname, email FROM users 
+        JOIN broadcast_list_contacts ON users.id = broadcast_list_contacts.contact_id 
+        WHERE broadcast_list_contacts.broadcast_list_id = %s
+    ''', (list_id,))
 
     return contacts
 

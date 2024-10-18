@@ -8,6 +8,7 @@
 <div class="mx-auto d-flex flex-column align-items-center py-5 text-secondary">
     <p class="fs-3 pb-1 border-bottom-primary text-primary">My Default Availability</p>
     <p class="mt-2 text-center">Note: you can overwrite this availability for each specific event.</p>
+    <p class="mt-2 text-center">Note: 0:00 -> 0:00 means you're available for 24hrs.</p>
 </div>
 
 <div class="mx-auto d-flex flex-column align-items-center gap-2 mt-4" id="general-availability" style="width: fit-content;">      
@@ -189,7 +190,7 @@
         // check if intervals are valid for the day else show an error and don't continue
         let srcIntervals = newAvailability[day]
         for (let i = 0; i < srcIntervals.length; i++){
-            if (srcIntervals[i].length != 3) {
+            if (srcIntervals[i].length != 3 && srcIntervals[i] != 'unavailable') {
                 appendAlert(`Fix ${daysNames[day]} timing errors before copying the timing to other days.`, 'danger')
                 return
             }
@@ -226,7 +227,7 @@
 
         // if source intervals have error show error and don't continue
         for (let i = 0; i < srcIntervals.length; i++){
-            if (srcIntervals[i].length != 3) {
+            if (srcIntervals[i].length != 3 && srcIntervals[i] != 'unavailable') {
                 appendAlert(`Fix ${daysNames[sourceDay]} timing errors before copying the timing to other days.`, 'danger')
                 return
             }
@@ -496,6 +497,7 @@
     function isValidInterval([start, end]) {
         start = timeToMinutes(start)
         end = timeToMinutes(end)
+
         return !(end <= start && start != 0 && end != 0)
     }
 
@@ -504,6 +506,9 @@
         
         // Function to check if two intervals overlap
         function isOverlapping(startA, endA, startB, endB) {
+            if (endA == 0) endA = 24*60
+            if (endB == 0) endB = 24*60
+            
             return startA < endB && startB < endA;
         }
     
@@ -603,7 +608,7 @@
         }
 
         if (!errorsFound) {
-            console.log(JSON.stringify(newAvailability))
+            appendAlert('Updating...', 'loading')
             fetch('/my-availability', {
                 //method: 'patch',
                 method: 'post',

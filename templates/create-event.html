@@ -149,7 +149,7 @@
         
     </div>
 
-    <button class="btn btn-primary mt-5" style="width: 100%;">Create Event</button>
+    <button class="btn btn-primary mt-5" style="width: 100%;" id="submit-button">Create Event</button>
 </form>
    
 {% endblock %}
@@ -160,6 +160,7 @@
 <script>
     //////////// Form Validation
     const form = document.querySelector('form')
+    const submitBtn = document.getElementById('submit-button')
     const titleInput = document.getElementById('event-title')
     const descriptionInput = document.getElementById('event-description')
     const locationInput = document.getElementById('event-location')
@@ -208,110 +209,120 @@
         }
     });
 
-
+    let form_loading = false
     form.addEventListener('submit', (e) => {
-        const today = new Date().toISOString().split('T')[0];
+        if (!form_loading) {
 
-        e.preventDefault()
-        // Make sure event title is provided
-        if (!titleInput.value) {appendAlert('Event title is missing', 'danger'); return}
-        // Make sure event description is provided
-        if (!descriptionInput.value) {appendAlert('Event description is missing', 'danger'); return}
-        // Make sure event location is provided
-        if (!locationInput.value) {appendAlert('Event location is missing', 'danger'); return}
-        // Make sure deadline is provided
-        if (!deadlineInput.value) {appendAlert('Submission deadline is missing', 'danger'); return}
-        else if (new Date(deadlineInput.value) < today) {appendAlert('Submission deadline must be in the future', 'danger'); return}
-        // Make sure event start date is provided
-        if (!startDateInput.value) {appendAlert('Event start date is missing', 'danger'); return}
-        else if (new Date(startDateInput.value) < today) {appendAlert('Event start date must be in the future', 'danger'); return}
-        // Make sure event end date is provided
-        if (!endDateInput.value) {appendAlert('Event end date is missing', 'danger'); return}
-        else if (new Date(endDateInput.value) < today) {appendAlert('Event end date must be in the future', 'danger'); return}
-        // Make sure duration is provided
-        if (durationHours.value == 0 && durationMins.value == 0) {
-            appendAlert('Duration must be more than 0', 'danger')
-            return
-        }
-
-        let startDate = new Date(startDateInput.value)
-        let endDate = new Date(endDateInput.value)
-        let deadlineDate = new Date(deadlineInput.value)
-        // Make sure end date is after or equal to start date
-        if (endDate < startDate) {
+            const today = new Date().toISOString().split('T')[0];
+    
             e.preventDefault()
-            appendAlert('The end date must be on or after the start date.', 'danger')
-            return
-        }
-        // Make sure end date is after or equal to deadline
-        if (endDate < deadlineDate) {
-            appendAlert('The deadline date must be on or before the end date.', 'danger')
-            return
-        }
-
-
-
-        let privacy = document.querySelector('input[name="privacy"]:checked')
-        if (!privacy || !['public', 'private'].includes(privacy.value)){
-            appendAlert("Privacy type must be selected", 'danger')
-            return
-        }
-        
-        if (privacy.value == 'private') {
-            // validate password
-            let passwordValue = passwordInput.value
-            if (passwordValue.length != 8) {
-                appendAlert('Password must be exactly 8 characters long.', 'danger')
+            // Make sure event title is provided
+            if (!titleInput.value) {appendAlert('Event title is missing', 'danger'); return}
+            // Make sure event description is provided
+            if (!descriptionInput.value) {appendAlert('Event description is missing', 'danger'); return}
+            // Make sure event location is provided
+            if (!locationInput.value) {appendAlert('Event location is missing', 'danger'); return}
+            // Make sure deadline is provided
+            if (!deadlineInput.value) {appendAlert('Submission deadline is missing', 'danger'); return}
+            else if (new Date(deadlineInput.value) < today) {appendAlert('Submission deadline must be in the future', 'danger'); return}
+            // Make sure event start date is provided
+            if (!startDateInput.value) {appendAlert('Event start date is missing', 'danger'); return}
+            else if (new Date(startDateInput.value) < today) {appendAlert('Event start date must be in the future', 'danger'); return}
+            // Make sure event end date is provided
+            if (!endDateInput.value) {appendAlert('Event end date is missing', 'danger'); return}
+            else if (new Date(endDateInput.value) < today) {appendAlert('Event end date must be in the future', 'danger'); return}
+            // Make sure duration is provided
+            if (durationHours.value == 0 && durationMins.value == 0) {
+                appendAlert('Duration must be more than 0', 'danger')
                 return
             }
-
-            passwordValue = passwordValue.toUpperCase()
-            let validValue = passwordValue.toUpperCase().replace(/[^A-Z0-9]/g, '')
-        
-            if (passwordValue != validValue) {
-                appendAlert('Password must only contain digits and letters.', 'danger')
+    
+            let startDate = new Date(startDateInput.value)
+            let endDate = new Date(endDateInput.value)
+            let deadlineDate = new Date(deadlineInput.value)
+            // Make sure end date is after or equal to start date
+            if (endDate < startDate) {
+                e.preventDefault()
+                appendAlert('The end date must be on or after the start date.', 'danger')
                 return
             }
-        }
+            // Make sure end date is after or equal to deadline
+            if (endDate < deadlineDate) {
+                appendAlert('The deadline date must be on or before the end date.', 'danger')
+                return
+            }
+    
+    
+    
+            let privacy = document.querySelector('input[name="privacy"]:checked')
+            if (!privacy || !['public', 'private'].includes(privacy.value)){
+                appendAlert("Privacy type must be selected", 'danger')
+                return
+            }
+            
+            if (privacy.value == 'private') {
+                // validate password
+                let passwordValue = passwordInput.value
+                if (passwordValue.length != 8) {
+                    appendAlert('Password must be exactly 8 characters long.', 'danger')
+                    return
+                }
+    
+                passwordValue = passwordValue.toUpperCase()
+                let validValue = passwordValue.toUpperCase().replace(/[^A-Z0-9]/g, '')
+            
+                if (passwordValue != validValue) {
+                    appendAlert('Password must only contain digits and letters.', 'danger')
+                    return
+                }
+            }
+    
+            // submit form
+            form_loading = true
+            submitBtn.disabled = true
+            appendAlert('Creating Event...', 'loading')
 
-        // submit form
-        fetch('/create-event', {
-            method: 'post',
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({
-                title: titleInput.value,
-                description: descriptionInput.value,
-                location: locationInput.value,
-                start_date: startDateInput.value,
-                end_date: endDateInput.value,
-                duration: {hours: durationHours.value , mins: durationMins.value},
-                deadline: deadlineInput.value,
-                privacy: privacy.value,
-                password: passwordInput.value,
-                added_users: addedEmails,
-                added_lists: addedLists 
+            fetch('/create-event', {
+                method: 'post',
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({
+                    title: titleInput.value,
+                    description: descriptionInput.value,
+                    location: locationInput.value,
+                    start_date: startDateInput.value,
+                    end_date: endDateInput.value,
+                    duration: {hours: durationHours.value , mins: durationMins.value},
+                    deadline: deadlineInput.value,
+                    privacy: privacy.value,
+                    password: passwordInput.value,
+                    added_users: addedEmails,
+                    added_lists: addedLists 
+                })
             })
-        })
-        .then(res => {
-            if (!res.ok) {
-                appendAlert("Network response error. Try again later.", 'warning')
-                throw new Error("Network response was not okay")
-            }
-            return res.json()
-        })
-        .then(data => {
-            if (data.success) {
-                appendAlert('Event Created Successfully!', 'success')
-                window.location.href = '/#my-events'
-            }
-            else if (data.status && data.status == 401) {
-                window.location.reload()
-            }
-            else {
-                appendAlert(data.message, 'danger')
-            }
-        })
-        .catch(err => console.log(err))
+            .then(res => {
+                if (!res.ok) {
+                    appendAlert("Network response error. Try again later.", 'warning')
+                    throw new Error("Network response was not okay")
+                }
+                return res.json()
+            })
+            .then(data => {
+                if (data.success) {
+                    appendAlert('Event Created Successfully!', 'success')
+                    window.location.href = '/#my-events'
+                }
+                else if (data.status && data.status == 401) {
+                    window.location.reload()
+                }
+                else {
+                    appendAlert(data.message, 'danger')
+                }
+
+                form_loading = false
+                submitBtn.disabled = false
+            })
+            .catch(err => console.log(err))
+        }
     })
 
 </script>
@@ -434,44 +445,55 @@
     const addPersonBtn = individualsListWrapper.element.querySelector('.add-person-btn')
     const addPersonEmailInpt = individualsListWrapper.element.querySelector("#individuals-list")
 
+    let add_user_loading = false
     addPersonBtn.addEventListener('click', () => {
-        if (!addPersonEmailInpt.value) {
-            appendAlert('Enter an  email', 'danger')
-        }
-        else if (!isValidEmail(addPersonEmailInpt.value)){
-            appendAlert('Enter a valid email.', 'danger')
-        } 
-        else if (isEmailInList(addPersonEmailInpt.value)) {
-            appendAlert('Email already added.', 'danger')
-        } 
-
-        else {
-            // check if a user exists with that email and add it to the list
-            fetch('/api/user-exists', {
-                method: "post",
-                headers: {"Content-Type": "application/json"},
-                body: JSON.stringify({email: addPersonEmailInpt.value})
-            })
-            .then(res => {
-                if (!res.ok) {
-                    throw new Error('Network response was not ok.')
-                    appendAlert('Network problem. Try again later.')
-                }
-                return res.json()
-            })
-            .then(data => {
-                if (data.success){
-                    addPersonRow(data.user)
-                }
-                else if (data.status && data.status == 401) {
-                    window.location.reload()
-                }
-                else {
-                    appendAlert(data.message, 'danger')
-                }
-            })
-            .catch(err => console.log(err))
-
+        if (!add_user_loading){
+            
+            if (!addPersonEmailInpt.value) {
+                appendAlert('Enter an  email', 'danger')
+            }
+            else if (!isValidEmail(addPersonEmailInpt.value)){
+                appendAlert('Enter a valid email.', 'danger')
+            } 
+            else if (isEmailInList(addPersonEmailInpt.value)) {
+                appendAlert('Email already added.', 'danger')
+            } 
+    
+            else {
+                add_user_loading = true
+                addPersonBtn.disabled = true
+                appendAlert('Adding User...', 'loading')
+                // check if a user exists with that email and add it to the list
+                fetch('/api/user-exists', {
+                    method: "post",
+                    headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify({email: addPersonEmailInpt.value})
+                })
+                .then(res => {
+                    if (!res.ok) {
+                        throw new Error('Network response was not ok.')
+                        appendAlert('Network problem. Try again later.')
+                    }
+                    return res.json()
+                })
+                .then(data => {
+                    if (data.success){
+                        addPersonRow(data.user)
+                        document.getElementById('liveAlertPlaceholder').innerHTML = ''
+                    }
+                    else if (data.status && data.status == 401) {
+                        window.location.reload()
+                    }
+                    else {
+                        appendAlert(data.message, 'danger')
+                    }
+                
+                    add_user_loading = false
+                    addPersonBtn.disabled = false
+                })
+                .catch(err => console.log(err))
+    
+            }
         }
     })
 

@@ -74,6 +74,7 @@
 
 
     <!-- MISSING SUBMISSIONS -->
+    {% if missing_submissions.length %}
     <div class="d-flex flex-column py-5 pb-4 mt-5 text-secondary">
         <p class="fs-3 pb-1 border-bottom-primary text-primary">Missing Submissions</p>
     </div>
@@ -83,6 +84,7 @@
             <div>{{name}}</div>
         {% endfor %}
     </div>
+    {% endif %}
 
     
     <!-- BEST TIMING OPTIONS -->
@@ -362,6 +364,8 @@
 
                 strip.style.height = stripHeight + 'px'
 
+                if (timeToMinutes(interval[1]) == 0) interval[1] = '24:00'
+
                 strip.style.width = count15MinIntervals(interval[0], interval[1]) * strip15Width + 'px'
                 strip.style.left = count15MinIntervals('0:00', interval[0]) * strip15Width + 'px'
 
@@ -374,41 +378,14 @@
     }
 
 
-    // tabs rendering and functionality
-    function renderTabs() {
-        submissions.forEach((sub, i) => {
-            const tab = document.createElement('div')
-            tab.classList = [`tab c-${i+1}`]
-            tab.textContent = sub.fullname
-            tabsContainer.appendChild(tab)
-
-            tab.addEventListener('click', handleTabClick)
-        })
-    }
     
-    function handleTabClick(e) {
-        const tab = e.currentTarget
-
-        tab.classList.toggle('disabled')
-
-        let strips = document.querySelectorAll(`.strip.${tab.classList[1]}`)
-        strips.forEach(strip => strip.classList.toggle('hidden'))
-    }
-    
-    renderTabs()
-    renderCalendar()
 </script>
 
 
 <script>
     // Best Timing Options
 
-    // Helpers
-    function parseTimeToMinutes(time) {
-        const [hours, minutes] = time.split(':').map(Number);
-        return hours * 60 + minutes;
-    }
-    
+    // Helpers    
     function convertMinutesToTime(minutes) {
         const hours = Math.floor(minutes / 60);
         const mins = minutes % 60;
@@ -443,9 +420,9 @@
     }
     
 
-    const fullDaySlots = generateTimeSlots(0, 1440)
+    let fullDaySlots = generateTimeSlots(0, 1440)
     let fullSlotsData = []
-    const eventDurationF15 = timeToMinutes(event.duration) / 15
+    let eventDurationF15 = timeToMinutes(event.duration) / 15
     let top10options = []
 
 
@@ -478,6 +455,10 @@
             let startMins = timeToMinutes(interval[0])
             let endMins = timeToMinutes(interval[1])
 
+            if (startMins == 0 && endMins == 0) {
+                endMins = 24 * 60
+            }
+
             for (let time = startMins; time < endMins; time += 15) {
                 binaryAvailability[fullDaySlots.indexOf(time)] = 1
             }
@@ -491,7 +472,7 @@
         datesInRange.forEach(({fullDate, day}) => {
     
             
-            // Get the number of participants the can fully attend and partially attend for every slot of length == event duration
+            // Get the number of participants that can fully attend and partially attend for every slot of length == event duration
             let sliceLength = eventDurationF15
             let daySlotsData = []
             for (let i = 0; i < (24*4 - sliceLength + 1); i++) {
@@ -500,6 +481,8 @@
     
             submissions.forEach((submission, index) => {
     
+                if (document.querySelector(`.tab.c-${index+1}`)?.classList?.contains('disabled')) return
+
                 // get availability in binary (0 for a slot where unavailable) (1 for a slot where available)
                 const availability = getAvailabilityInBinary(submission.user_availability, fullDate, day)
     
@@ -748,9 +731,46 @@
     }
 
     
-    calculateSlotsScores()
-    calculateTop10Options()
-    displayTopOption(top10options)
+    function calcAndDisplayOptions() {
+        cardsContainer.innerHTML = ''
+        fullDaySlots = generateTimeSlots(0, 1440)
+        fullSlotsData = []
+        eventDurationF15 = timeToMinutes(event.duration) / 15
+        top10options = []
+        calculateSlotsScores()
+        calculateTop10Options()
+        displayTopOption(top10options)
+    }
+    
+
+    // tabs rendering and functionality
+    function renderTabs() {
+        submissions.forEach((sub, i) => {
+            const tab = document.createElement('div')
+            tab.classList = [`tab c-${i+1}`]
+            tab.textContent = sub.fullname
+            tabsContainer.appendChild(tab)
+
+            tab.addEventListener('click', handleTabClick)
+        })
+    }
+    
+    function handleTabClick(e) {
+        const tab = e.currentTarget
+
+        tab.classList.toggle('disabled')
+
+        let strips = document.querySelectorAll(`.strip.${tab.classList[1]}`)
+        strips.forEach(strip => strip.classList.toggle('hidden'))
+
+        calcAndDisplayOptions()
+    }
+    
+    renderTabs()
+    renderCalendar()
+    calcAndDisplayOptions()
+
+
 </script>
 
 {% endblock %}

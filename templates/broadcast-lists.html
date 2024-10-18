@@ -119,67 +119,75 @@
 
     //////////////////// MODAL FUNCTIONALITY
     // Add New User Button
+    let add_user_loading = false
     function handleAddNewUserBtnClick(e) {
-        modalAlertClose()
-        let isValid = true
+        if (!add_user_loading) {
 
-        if (!emailInpt.value) {
-            modalAlert('No email provided', 'danger')
-            return
-        }
-
-        if (!isValidEmail(emailInpt.value)){
-            modalAlert('Email is not valid', 'danger')
-            return
-        }
-
-        if (emailAlreadyInList(emailInpt.value, usersList)) {
-            emailInpt.value = ''
-            modalAlert('User is already in the list', 'danger')
-            return
-        }
-        
-
-        fetch('/api/user-exists', {
-            method: 'post',
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify( {email: emailInpt.value} )
-        })
-        .then(res => {
-            if (!res.ok) {
-                modalAlert("Server error. Please try again later", 'warning')
-                throw new Error("Network response was not okay")
+            modalAlertClose()
+            let isValid = true
+    
+            if (!emailInpt.value) {
+                modalAlert('No email provided', 'danger')
+                return
             }
-            return res.json()
-        })
-        .then(data => {
-            // if user is found and isn't already in the list
-            if (data.success){
-                user = data.user
-                if (!emailAlreadyInList(user.email, usersList)){
-                    // create row
-                    rowsContainer.appendChild(createRow(user))
-                    rowsContainer.appendChild(createSpacer(user.id))
-                    // add user to list
-                    usersList.push(user)
-
-                    modalAlertClose()
+    
+            if (!isValidEmail(emailInpt.value)){
+                modalAlert('Email is not valid', 'danger')
+                return
+            }
+    
+            if (emailAlreadyInList(emailInpt.value, usersList)) {
+                emailInpt.value = ''
+                modalAlert('User is already in the list', 'danger')
+                return
+            }
+            
+            add_user_loading = true
+            modalAlert('Adding User...', 'loading')
+            
+            fetch('/api/user-exists', {
+                method: 'post',
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify( {email: emailInpt.value} )
+            })
+            .then(res => {
+                if (!res.ok) {
+                    modalAlert("Server error. Please try again later", 'warning')
+                    throw new Error("Network response was not okay")
                 }
+                return res.json()
+            })
+            .then(data => {
+                // if user is found and isn't already in the list
+                if (data.success){
+                    user = data.user
+                    if (!emailAlreadyInList(user.email, usersList)){
+                        // create row
+                        rowsContainer.appendChild(createRow(user))
+                        rowsContainer.appendChild(createSpacer(user.id))
+                        // add user to list
+                        usersList.push(user)
+    
+                        modalAlertClose()
+                    }
+                    else {
+                        modalAlert('User is already in the list', 'danger')
+                    }
+                }
+                // if user is unauthorized
+                else if (data.status && data.status == 401){
+                    window.location.reload();
+                }
+                // if user not found
                 else {
-                    modalAlert('User is already in the list', 'danger')
+                    modalAlert(data.message, 'danger')
                 }
-            }
-            // if user is unauthorized
-            else if (data.status && data.status == 401){
-                window.location.reload();
-            }
-            // if user not found
-            else {
-                modalAlert(data.message, 'danger')
-            }
-            emailInpt.value = ''
-        })
-        .catch(err => console.log(err))
+                
+                emailInpt.value = ''
+                add_user_loading = false
+            })
+            .catch(err => console.log(err))
+        }
     }
 
     // Remove User Row Icon
@@ -232,6 +240,8 @@
             return
         }
 
+        modalAlert('Creating List...', 'loading')
+
         fetch('/broadcast-list', {
             method: 'post',
             headers: {"Content-Type": "application/json"},
@@ -257,6 +267,7 @@
                 cardsContainer.innerHTML = ''
                 renderCards(data.lists)
                 appendAlert('New list created successfully!', 'success')
+                modalAlertClose()
                 listsModal.hide()
             }
             // if user is unauthorized
@@ -274,34 +285,43 @@
 
     /////////////////// EDIT LIST
     // Handle Edit Button
+    let edit_btn_loading = false
     function handleEditBtnClick(e) {
-        let editBtn = e.currentTarget
-        let listId = editBtn.parentElement.parentElement.getAttribute('id')
+        if(!edit_btn_loading){
+            let editBtn = e.currentTarget
+            let listId = editBtn.parentElement.parentElement.getAttribute('id')
+    
+            edit_btn_loading = true
+            loadBtn(editBtn)
+            fetch(`/broadcast-list?listId=${listId}`)
+            .then(res => {
+                if (!res.ok) {
+                    appendAlert('Server error. Please try again later', 'warning')
+                    throw new Error("Network response was not okay.")
+                }
+                return res.json()
+            })
+            .then(data => {
+                if (data.success) {
+                    openEditModal({
+                        id: data.data.list_id,
+                        listName: data.data.list_name,
+                        users: data.data.contacts
+                    })
+                }
+                // if user is unauthorized
+                else if (data.status && data.status == 401){
+                    window.location.reload();
+                }
+                else {
+                    appendAlert(data.message, 'warning')
+                }
+            
+                edit_btn_loading = false
+                stoploadBtn(editBtn)
+            })
 
-        fetch(`/broadcast-list?listId=${listId}`)
-        .then(res => {
-            if (!res.ok) {
-                appendAlert('Server error. Please try again later', 'warning')
-                throw new Error("Network response was not okay.")
-            }
-            return res.json()
-        })
-        .then(data => {
-            if (data.success) {
-                openEditModal({
-                    id: data.data.list_id,
-                    listName: data.data.list_name,
-                    users: data.data.contacts
-                })
-            }
-            // if user is unauthorized
-            else if (data.status && data.status == 401){
-                window.location.reload();
-            }
-            else {
-                appendAlert(data.message, 'warning')
-            }
-        })
+        }
         
     }
 
@@ -344,6 +364,8 @@
             return
         }
 
+        modalAlert('Updating List...', 'loading')
+
         fetch('/broadcast-list', {
             //method: 'patch',
             method: 'post',
@@ -371,6 +393,7 @@
                 rowsContainer.innerHTML = ''
                 usersList = []
                 listsModal._element.id = ''
+                modalAlertClose()
                 listsModal.hide()
                 appendAlert('List updated successfully!', 'success')
             }
@@ -419,7 +442,8 @@
         listId = deleteListModal._element.getAttribute('listId')
 
         if (deleteListConfirmInput.value.toUpperCase() == 'CONFIRM') {
-            deleteListConfirmBtn.classList.remove('disabled')
+            deleteListModal.hide()
+            appendAlert('Deleting List...', 'loading')
                
             let event_id = deleteListModal._element.getAttribute('eventId')
             fetch('/broadcast-list', {
@@ -439,7 +463,6 @@
                     appendAlert('List deleted successfully.', 'success')
                     cardsContainer.innerHTML = ''
                     renderCards(data.lists)
-                    deleteListModal.hide()
                 }
                 // if user is unauthorized
                 else if (data.status && data.status == 401){
@@ -447,7 +470,6 @@
                 } 
                 else {
                     appendAlert(data.message, 'danger')
-                    deleteListModal.hide()
                 }
             })
             .catch(err => console.log(err))
@@ -517,8 +539,17 @@
     }
     
     function modalAlert(message, type){
-        modalAlertElement.classList = [`alert py-2 px-4 m-0 alert-${type}`]
-        modalAlertElement.textContent = message
+        if (type == 'loading') {
+            modalAlertElement.classList = [`alert py-2 px-4 m-0 alert-primary`]
+            modalAlertElement.innerHTML = `   
+                <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+                <span class='text'>Working On It...</span>
+            ` 
+        }
+        else {
+            modalAlertElement.classList = [`alert py-2 px-4 m-0 alert-${type}`]
+            modalAlertElement.textContent = message
+        }
     }
     function modalAlertClose() {
         modalAlertElement.classList = ['alert py-2 px-4 m-0 hidden']
@@ -530,6 +561,7 @@
     // Page Cards Rendering
     let data = {{ data|tojson }}   
     const cardsContainer = document.getElementById('cards-container')
+
     function renderCards(data) {
         data.forEach(card => {
             let c = createCard(card)
@@ -570,8 +602,11 @@
         let editBtn = document.createElement('a')
         editBtn.classList = ['btn btn-primary btn-sm d-flex align-items-center gap-1 justify-content-center']
         editBtn.innerHTML = `
-            <svg width="1.1rem" height="1.1rem" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" class="w-7 h-7 pointer-events-none !h-6 !w-6 text-base -ml-2 mr-1"><path d="M13.637 4.213c1.607-1.605 4.206-1.604 5.9-.076l.166.157.158.167c1.479 1.639 1.53 4.121.081 5.737l-.155.164-8.831 8.83a6.197 6.197 0 01-4.27 1.806H6.4l-3.325-.074-.073-3.324a6.216 6.216 0 011.61-4.352l.195-.205 8.83-8.83zM11.93 8.041l-6.063 6.063a4.694 4.694 0 00-1.365 3.2v.263l.04 1.89 1.89.041.263-.001a4.7 4.7 0 003.015-1.19l.187-.177 6.061-6.06L11.93 8.04zm4.724-3.54a2.682 2.682 0 00-1.808.635l-.15.138L13.274 6.7l4.028 4.028L18.726 9.3c1.063-1.064 1.027-2.835-.083-3.945a2.908 2.908 0 00-1.81-.846l-.18-.01z" fill="currentcolor" fill-rule="evenodd"></path></svg>
-            Edit
+            <span class="spinner-border spinner-border-sm hidden" aria-hidden="true"></span>
+            <span class='text'>
+                <svg width="1.1rem" height="1.1rem" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" class="w-7 h-7 pointer-events-none !h-6 !w-6 text-base -ml-2 mr-1"><path d="M13.637 4.213c1.607-1.605 4.206-1.604 5.9-.076l.166.157.158.167c1.479 1.639 1.53 4.121.081 5.737l-.155.164-8.831 8.83a6.197 6.197 0 01-4.27 1.806H6.4l-3.325-.074-.073-3.324a6.216 6.216 0 011.61-4.352l.195-.205 8.83-8.83zM11.93 8.041l-6.063 6.063a4.694 4.694 0 00-1.365 3.2v.263l.04 1.89 1.89.041.263-.001a4.7 4.7 0 003.015-1.19l.187-.177 6.061-6.06L11.93 8.04zm4.724-3.54a2.682 2.682 0 00-1.808.635l-.15.138L13.274 6.7l4.028 4.028L18.726 9.3c1.063-1.064 1.027-2.835-.083-3.945a2.908 2.908 0 00-1.81-.846l-.18-.01z" fill="currentcolor" fill-rule="evenodd"></path></svg>
+                Edit
+            </span>
         `
         editBtn.addEventListener('click', handleEditBtnClick)
         footer.appendChild(editBtn)
