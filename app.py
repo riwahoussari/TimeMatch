@@ -1,5 +1,6 @@
 from flask import Flask, redirect, render_template, request, session, jsonify, url_for, send_from_directory
 from flask_session import Session
+from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import check_password_hash, generate_password_hash
 from datetime import timedelta, datetime
 import json
@@ -21,17 +22,27 @@ months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 
 # Configure application
 app = Flask(__name__)
 
+# App configurations
 app.secret_key = os.getenv('SECRET_KEY')
-app.config["SESSION_TYPE"] = "filesystem"
-app.config["SESSION_FILE_DIR"] = os.path.join(app.instance_path, 'flask_session')
-app.config["SESSION_PERMANENT"] = True
-app.config["SESSION_USE_SIGNER"] = True  
-app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=30)
 app.config['HOST'] = os.getenv('APP_HOST')
 app.config['PORT'] = os.getenv('APP_PORT')
 app.config['DEBUG'] = os.getenv('APP_DEBUG') == 'True'
 
+# SQLAlchemy configuration
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DB_URI')
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# Session configuration
+db = SQLAlchemy(app)
+app.config["SESSION_TYPE"] = "sqlalchemy"
+app.config["SESSION_SQLALCHEMY"] = db
+app.config["SESSION_PERMANENT"] = True
+app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=30)
+app.config["SESSION_USE_SIGNER"] = True
 Session(app)
+
+
+
 
 # caching
 @app.route('/static/<path:filename>')
