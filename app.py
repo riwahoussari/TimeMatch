@@ -28,7 +28,7 @@ app.config['HOST'] = os.getenv('APP_HOST')
 app.config['PORT'] = os.getenv('APP_PORT')
 app.config['DEBUG'] = os.getenv('APP_DEBUG') == 'True'
 
-# SQLAlchemy configuration
+# SQLAlchemy configuration (for storing sessions in db)
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DB_URI')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
@@ -210,6 +210,12 @@ def db_delete(query, tuple=()):
     finally:
         connection.commit()
         connection.close()
+
+
+# Clear expired sessions from database
+def clear_expired_sessions():
+    db_delete('DELETE FROM sessions WHERE expiry <= %s', (datetime.now(),)) 
+clear_expired_sessions()
 
 
 
@@ -1686,4 +1692,4 @@ def page_not_found(e):
 
 
 if __name__ == '__main__':
-    app.run(host=app.config['HOST'], port=app.config['PORT'])
+    app.run(host=app.config['HOST'], port=app.config['PORT'], debug=False)
