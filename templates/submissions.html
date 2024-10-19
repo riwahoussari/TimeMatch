@@ -593,9 +593,16 @@
             'January', 'February', 'March', 'April', 'May', 'June',
             'July', 'August', 'Sptember', 'October', 'November', 'December'
         ];
-
+        
+        if (!top10options.length) {
+            let p = document.createElement('p')
+            p.classList.add('text-secondary')
+            p.textContent = 'There are no good timing options to show.'
+            cardsContainer.appendChild(p)
+            return
+        }
+        
         top10options.forEach(opt => {
-
             let {fullAttandance, comingLate, leavingEarly, date, start, end} = opt
 
             const [dateNum, month, year] = date.split('/').map(Number);

@@ -750,8 +750,15 @@ header .navbar {
                 justify-content: center;
                 gap: 1rem;
 
-                img:disabled{
-                    opacity: 0.5;
+                img{
+                    cursor: pointer;
+                }
+                img:hover{
+                    opacity: 0.8;
+                }
+                img.opacity-50{
+                    cursor: not-allowed;
+                    opacity: 0.2 !important;
                 }
             }
 
