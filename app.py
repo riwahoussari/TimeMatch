@@ -1568,6 +1568,7 @@ def broadcastList():
         added_users = [usr for usr in new_list if usr not in old_list]
         added_users = [usr for usr in added_users if usr in existing_user_ids]
 
+        # add new users
         for user in added_users:
             db_insert('INSERT INTO broadcast_list_contacts (broadcast_list_id, contact_id) VALUES (%s, %s)', (list_id, user))
         
@@ -1576,7 +1577,10 @@ def broadcastList():
         for user in removed_users:
             db_delete('DELETE FROM broadcast_list_contacts WHERE broadcast_list_id = %s AND contact_id = %s', (list_id, user))
 
-        return jsonify({"success": True})
+        # return the users new and updated lists
+        user_broadcast_lists = db_select("SELECT id, broadcast_list_name FROM broadcast_lists WHERE creator_id = %s", (user_id,))
+
+        return jsonify({"success": True, 'lists': user_broadcast_lists})
     
     elif request_method == "GET":
         list_id = request.args.get('listId')

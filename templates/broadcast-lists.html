@@ -396,6 +396,9 @@
                 modalAlertClose()
                 listsModal.hide()
                 appendAlert('List updated successfully!', 'success')
+
+                cardsContainer.innerHTML = ''
+                renderCards(data.lists)
             }
             // if user is unauthorized
             else if (data.status && data.status == 401){
