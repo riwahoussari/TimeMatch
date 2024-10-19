@@ -144,6 +144,13 @@
         const result = [];
         let currentDate = new Date(startDate);
         const lastDate = new Date(endDate);
+
+        currentDate.setHours(0)
+        currentDate.setMinutes(0)
+        currentDate.setSeconds(0)
+        lastDate.setHours(0)
+        lastDate.setMinutes(0)
+        lastDate.setSeconds(0)
       
         // Loop through each date from start to end
         while (currentDate <= lastDate) {
