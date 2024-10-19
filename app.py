@@ -1367,15 +1367,22 @@ def submissions(event_hash):
     event = event[0]
 
 
-    # get submissions (users with accounts)
-    user_submissions = db_select("""
-        SELECT event_users.user_availability, users.fullname
+    # get all invitees
+    all_invitees = db_select("""
+        SELECT event_users.user_availability, invitation_status, users.fullname
         FROM event_users
         JOIN users ON event_users.user_id = users.id
         WHERE event_users.event_id = %s 
-        AND event_users.invitation_status = 'accepted'
+        AND event_users.invitation_status IN ('accepted', 'declined', 'pending')
     """, (event_id,))
     
+    # get submissions (users with accounts)
+    user_submissions = [
+        {'fullname': sub['fullname'], 'user_availability': sub['user_availability']} 
+        for sub in all_invitees 
+        if sub['invitation_status'] == 'accepted'
+    ]
+
     # get submissions (users with no accounts)
     unknown_submissions = db_select("SELECT user_availability, fullname FROM unknown_submissions WHERE event_id = %s", (event_id,))
 
@@ -1387,15 +1394,13 @@ def submissions(event_hash):
     ]
 
 
-    # get missing submissions
-    missing_submissions = db_select("""
-        SELECT users.fullname FROM users
-        JOIN event_users ON users.id = event_users.user_id
-        WHERE event_users.event_id = %s AND invitation_status IN ('pending', 'declined')
-     """, (event_id,))
-    
-    missing_submissions = [sub['fullname'] for sub in missing_submissions]
-    return render_template('submissions.html', submissions=submissions, event=event,  missing_submissions=missing_submissions)
+    # get missing submissions    
+    missing_submissions = [sub['fullname'] for sub in all_invitees if sub['invitation_status'] == 'pending']
+
+    # get users that declined the invitations
+    declined_invitations = [sub['fullname'] for sub in all_invitees if sub['invitation_status'] == 'declined']
+
+    return render_template('submissions.html', submissions=submissions, event=event,  missing_submissions=missing_submissions, declined_invitations=declined_invitations)
 
 
 

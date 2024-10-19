@@ -74,13 +74,27 @@
 
 
     <!-- MISSING SUBMISSIONS -->
-    {% if missing_submissions.length %}
+    {% if missing_submissions|length %}
     <div class="d-flex flex-column py-5 pb-4 mt-5 text-secondary">
         <p class="fs-3 pb-1 border-bottom-primary text-primary">Missing Submissions</p>
     </div>
 
     <div class="missing-submissions-container m-0">
         {% for name in missing_submissions %}
+            <div>{{name}}</div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+
+    <!-- Declined Invitations -->
+    {% if declined_invitations|length %}
+    <div class="d-flex flex-column py-5 pb-4 mt-5 text-secondary">
+        <p class="fs-3 pb-1 border-bottom-primary text-primary">Declined Invitations</p>
+    </div>
+
+    <div class="missing-submissions-container m-0">
+        {% for name in declined_invitations %}
             <div>{{name}}</div>
         {% endfor %}
     </div>
