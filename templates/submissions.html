@@ -168,7 +168,6 @@
       
         return result;
       }
-      
 
     function timeToMinutes(time) {
         const [hours, minutes] = time.split(':').map(Number);
@@ -184,6 +183,22 @@
     
         // Calculate how many 15-minute intervals are in the difference
         return differenceInMinutes / 15;
+    }
+
+    function datesAreEqual(date1, date2){
+        date1 = date1.split('/').map(Number)
+        date2 = date2.split('/').map(Number)
+
+        console.log(date1, date2)
+
+        if (
+            date1[0] != date2[0] ||
+            date1[1] != date2[1] ||
+            date1[2] != date2[2]
+        ) {
+            return false
+        }
+        return true
     }
 </script>
 
@@ -356,7 +371,8 @@
             // search if the availability is specific for this date
             if (availability.length > 1) {
                 for (let i = 1; i < availability.length; i++) {
-                    if (availability[i].date == currentDate.fullDate) {
+                    if (datesAreEqual(availability[i].date, currentDate.fullDate)){
+                        console.log(true)
                         dayIntervals = availability[i].intervals
                         found = true
                         break
@@ -457,7 +473,8 @@
             
             for (let i = 1; i < availability.length; i++) {
 
-                if (availability[i].date == fullDate) {
+                //if (availability[i].date == fullDate) {
+                if (datesAreEqual(availability[i].date, fullDate)) {
                     dayAvailability = availability[i].intervals
                     found = true
                     break
