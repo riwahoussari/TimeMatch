@@ -218,7 +218,6 @@ def clear_expired_sessions():
 clear_expired_sessions()
 
 
-
 ################################################
 ################## OAUTH
 app.config['GOOGLE_CLIENT_ID'] = os.getenv('GOOGLE_CLIENT_ID') 
@@ -1686,17 +1685,17 @@ def page_not_found(e):
     })
 
 # All Errors handler
-# @app.errorhandler(Exception) 
-# def internal_server_error(e) :
-#     user_id = session.get('user_id')
-#     if user_id is None or user_id == []: loggedin = False
-#     else: loggedin = True
+@app.errorhandler(Exception) 
+def internal_server_error(e) :
+    user_id = session.get('user_id')
+    if user_id is None or user_id == []: loggedin = False
+    else: loggedin = True
 
-#     return render_template('error.html', data={
-#         'code': '500',
-#         'message': "Oops! Something went wrong on our end. It's not you, it's us. We're working on fixing the issue. Please try again later.",
-#         'loggedin': loggedin
-#     })
+    return render_template('error.html', data={
+        'code': '500',
+        'message': "Oops! Something went wrong on our end. It's not you, it's us. We're working on fixing the issue. Please try again later.",
+        'loggedin': loggedin
+    })
 
 
 
