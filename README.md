@@ -6,6 +6,10 @@ Time Match is a web app that allows groups of individuals to easily and quickly 
 Time Match eliminates the hassle of trying to find a suitable time for everyone using normal messaging apps.
 
 &nbsp; 
+## Distinctiveness and Complexity:
+I tried to search for online tools that can help find a match between many people's busy schedules but I failed to find one. That why I decided to create Timematch which is a unique web app that solves a real problem.
+
+&nbsp; 
 ## The way it works:
 ### 1) A user, we'll call him **The Creator**, starts by creating an account than he creates an event. 
     To create the event The Creator will need to enter the event's title, description, location, duration, start date, end date, deadline and privacy. 
