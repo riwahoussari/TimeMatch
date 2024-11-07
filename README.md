@@ -7,7 +7,17 @@ Time Match eliminates the hassle of trying to find a suitable time for everyone 
 
 &nbsp; 
 ## Distinctiveness and Complexity:
-I tried to search for online tools that can help find a match between many people's busy schedules but I failed to find one. That why I decided to create Timematch which is a unique web app that solves a real problem.
+I tried to search for online tools that can help find a match between many people's busy schedules but I failed to find one. That's why I decided to create Timematch which is a unique web app that solves a real problem.
+I tried my best to make Timematch very easy to use although it's quite complex under the hood...
+1) creating accounts with 2 methods (email & password or Google oauth)
+2) creating events with different levels of privacy and security
+3) different obstacles for accessing events depending on event privacy level and wether the user is logged in or not
+4) creating broadcast lists to easily and quickly share events with people
+5) submitting to events even if you don't have an account
+6) setting your default schedule so that everytime you submit to an event you can have your availability prefilled.
+7) building a unique algorithm from scratch to find the best timing options between any number of people for any given duration.
+
+
 
 &nbsp; 
 ## The way it works:
