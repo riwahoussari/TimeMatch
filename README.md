@@ -6,26 +6,6 @@ Time Match is a web app that allows groups of individuals to easily and quickly 
 Time Match eliminates the hassle of trying to find a suitable time for everyone using normal messaging apps.
 
 &nbsp; 
-## Distinctiveness and Complexity:
-I tried to search for online tools that can help find a match between many people's busy schedules but I failed to find one. That's why I decided to create Timematch which is a unique web app that solves a real problem.
-I tried my best to make Timematch very easy to use although it's quite complex under the hood...
-1) creating accounts with 2 methods (email & password or Google oauth)
-2) creating events with different levels of privacy and security
-3) editing event settings
-4) different obstacles for accessing events depending on event privacy level and wether the user is logged in or not
-5) creating broadcast lists to easily and quickly share events with people
-6) accepting/declining invitations
-7) setting a regular availability and overwriting it with a specific availability for specific days within an event's date range.
-8) submitting your availability to events even if you don't have an account
-9) changing your availability after submitting it even if you don't have an account using sessions
-10) setting your default schedule so that everytime you submit to an event you can have your availability prefilled.
-11) **building a unique algorithm from scratch** to find the best timing options between any number of people for any given duration.
-12) building a unique dynamic calendar that displays the availabilities with the option to toggle people on and off. 
-
-
-
-
-&nbsp; 
 ## The way it works:
 ### 1) A user, we'll call him **The Creator**, starts by creating an account than he creates an event. 
     To create the event The Creator will need to enter the event's title, description, location, duration, start date, end date, deadline and privacy. 
@@ -304,5 +284,3 @@ merge dictionnaries that are identical in score, date, full attandees, coming la
 stop merging once top 10 options array has 10 dictionnaries
 ```
     
-
-
