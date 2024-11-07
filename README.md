@@ -11,11 +11,17 @@ I tried to search for online tools that can help find a match between many peopl
 I tried my best to make Timematch very easy to use although it's quite complex under the hood...
 1) creating accounts with 2 methods (email & password or Google oauth)
 2) creating events with different levels of privacy and security
-3) different obstacles for accessing events depending on event privacy level and wether the user is logged in or not
-4) creating broadcast lists to easily and quickly share events with people
-5) submitting to events even if you don't have an account
-6) setting your default schedule so that everytime you submit to an event you can have your availability prefilled.
-7) building a unique algorithm from scratch to find the best timing options between any number of people for any given duration.
+3) editing event settings
+4) different obstacles for accessing events depending on event privacy level and wether the user is logged in or not
+5) creating broadcast lists to easily and quickly share events with people
+6) accepting/declining invitations
+7) setting a regular availability and overwriting it with a specific availability for specific days within an event's date range.
+8) submitting your availability to events even if you don't have an account
+9) changing your availability after submitting it even if you don't have an account using sessions
+10) setting your default schedule so that everytime you submit to an event you can have your availability prefilled.
+11) **building a unique algorithm from scratch** to find the best timing options between any number of people for any given duration.
+12) building a unique dynamic calendar that displays the availabilities with the option to toggle people on and off. 
+
 
 
 
