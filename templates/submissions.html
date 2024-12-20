@@ -642,7 +642,7 @@
 
             const [dateNum, month, year] = date.split('/').map(Number);
             const day = new Date(year, month - 1, dateNum).toLocaleDateString('en-US', { weekday: 'short' })
-            date = `${day} ${dateNum} ${months[month]} ${year}`
+            date = `${day} ${dateNum} ${months[month - 1]} ${year}`
 
             let duration = eventDurationF15 * 15;
 
